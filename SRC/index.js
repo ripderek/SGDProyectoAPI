@@ -16,8 +16,8 @@ dotenv.config();
 
 //Consfigurar el puerto donde se va abrir la API
 const app = express();
-const PORT = process.env.PORT || 4000;
-const corsOptions = { Credentials: true, origin: 'http://localhost:3000' };
+const PORT = 4000;
+const corsOptions = { credentials: true, origin: "http://localhost:3000" };
 
 app.use(cors(corsOptions));
 app.use(express.json());

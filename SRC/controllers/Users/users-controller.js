@@ -17,7 +17,15 @@ const modificar_usuario = async (req, res, next) => {
     return res.json({ mensaje: "Modificar Usuario" });
 }
 const datos_Usuarios = async (req, res, next) => {
-    return res.json({ mensaje: "Datos Usuario" });
+    try {
+        const { id } = req.params;
+
+        const users = await pool.query('select * from User_Data($1)', [id]);
+        console.log(users);
+        return res.status(200).json(users.rows[0]);
+    } catch (error) {
+        next(error);
+    }
 }
 
 
