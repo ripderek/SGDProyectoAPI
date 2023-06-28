@@ -5,8 +5,8 @@ const { serialize } = require('cookie');
 
 const crear_usuario = async (req, res, next) => {
     try {
-        const { nombres, tipo_identificacion, identificacion, correo1, correo2, celular, foto, firma, contra, isadmin } = req.body;
-        const users = await pool.query('Call Crear_Usuario($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)', [nombres, tipo_identificacion, identificacion, correo1, correo2, celular, foto, firma, contra, isadmin]);
+        const { nombres, tipo_identificacion, identificacion, correo1, correo2, celular, foto, firma, isadmin } = req.body;
+        const users = await pool.query('Call Crear_Usuario($1,$2,$3,$4,$5,$6,$7,$8,$9)', [nombres, tipo_identificacion, identificacion, correo1, correo2, celular, foto, firma, isadmin]);
         console.log(users);
         return res.status(200).json({ message: "Se creo el usuario" });
     } catch (error) {
@@ -28,9 +28,20 @@ const datos_Usuarios = async (req, res, next) => {
     }
 }
 
+const all_data_users = async (req, res, next) => {
+    try {
+        const users = await pool.query('select * from Users_allData()');
+        console.log(users);
+        return res.status(200).json(users.rows);
+    } catch (error) {
+        next(error);
+    }
+}
+
 
 module.exports = {
     crear_usuario,
     modificar_usuario,
-    datos_Usuarios
+    datos_Usuarios,
+    all_data_users
 };

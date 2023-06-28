@@ -7,9 +7,11 @@ const cookieParser = require('cookie-parser');
 const { authenticateToken } = require('./middleware/authorization.js');
 
 
-//variable donde se importa las rutas del authentication user
+//variable donde se importa las rutas
 const authRoutes = require('./routes/auth-routes.js');
 const userRoutes = require('./routes/users-routes.js');
+const areaRoutes = require('./routes/area-routes.js');
+
 
 //config entorno
 dotenv.config();
@@ -28,9 +30,9 @@ app.use(cookieParser());
 //inicio de sesion
 app.use('/api/auth', authRoutes);
 
-
 //rutas protegidas con middleare, es decir, se necesita un token valido para acceder
 app.use('/api/user', authenticateToken, userRoutes);
+app.use('/api/area', authenticateToken, areaRoutes);
 
 
 //Iniciar la API
