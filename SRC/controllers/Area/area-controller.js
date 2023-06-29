@@ -54,11 +54,51 @@ const usuarios_sin_areas = async (req, res, next) => {
         next(error)
     }
 }
+const todos_los_roles = async (req, res, next) => {
+    try {
+        //agregar un usuario a un area
+        const roles = await pool.query('select * from all_roles()');
+        console.log(roles.rows);
+        return res.status(200).json(roles.rows);
+    } catch (error) {
+        console.log(error);
+        next(error)
+    }
+}
+const data_user_area = async (req, res, next) => {
+    try {
+        //agregar un usuario a un area
+        const { id } = req.params;
+        const data_user = await pool.query('select * from data_user_area($1)', [id]);
+        console.log(data_user.rows);
+        return res.status(200).json(data_user.rows[0]);
+    } catch (error) {
+        console.log(error);
+        next(error)
+    }
+}
+
+
+const data_area_id = async (req, res, next) => {
+    try {
+        //agregar un usuario a un area
+        const { id } = req.params;
+        const data_area = await pool.query('select * from area_allData_id($1)', [id]);
+        console.log(data_area.rows);
+        return res.status(200).json(data_area.rows[0]);
+    } catch (error) {
+        console.log(error);
+        next(error)
+    }
+}
 
 module.exports = {
     crear_area,
     all_data_area,
     relacionar_usuario_area,
     usuarios_areas,
-    usuarios_sin_areas
+    usuarios_sin_areas,
+    todos_los_roles,
+    data_user_area,
+    data_area_id
 };
