@@ -1,9 +1,19 @@
 const pool = require('../../db');
+const fs = require('fs');
+
+
+let ipFileServer = "../../uploads/areas/perfiles/";
+const path = require('path');
 
 const crear_area = async (req, res, next) => {
     try {
-        const { nombre_area, nivel_area, url_foto } = req.body;
-        const area = await pool.query('Call crear_area($1,$2,$3)', [nombre_area, nivel_area, url_foto]);
+        //obtener la URL de la Imagen Subida del area
+        const { file } = req
+        const foto = `${ipFileServer}${file?.filename}`;
+        //obtener los atributos mediante el form body
+        const { nombre_area } = req.body;
+        const { nivel_area } = req.body;
+        const area = await pool.query('Call crear_area($1,$2,$3)', [nombre_area, nivel_area, foto]);
         console.log(area);
         return res.status(200).json({ message: "Se creo el area" });
     } catch (error) {
@@ -92,6 +102,21 @@ const data_area_id = async (req, res, next) => {
     }
 }
 
+//COnsulta para ver las fotos de las areas
+const imagen_area = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const users = await pool.query('select * from area_logo($1)', [id]);
+        let ext = path.extname("7.jpg");
+        let fd = fs.createReadStream(path.join(__dirname, "../" + users.rows[0].logoarea));
+        res.setHeader("Content-Type", "image/" + ext.substr(1));
+        fd.pipe(res);
+    } catch (error) {
+        return res.status(404).json({ message: "No se encuentra la imagen " });
+    }
+}
+
+
 module.exports = {
     crear_area,
     all_data_area,
@@ -100,5 +125,6 @@ module.exports = {
     usuarios_sin_areas,
     todos_los_roles,
     data_user_area,
-    data_area_id
+    data_area_id,
+    imagen_area
 };
