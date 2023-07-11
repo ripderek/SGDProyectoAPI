@@ -11,7 +11,7 @@ const { authenticateToken } = require('./middleware/authorization.js');
 const authRoutes = require('./routes/auth-routes.js');
 const userRoutes = require('./routes/users-routes.js');
 const areaRoutes = require('./routes/area-routes.js');
-
+const proyectsRoutes = require('./routes/proyects-routes.js');
 
 //config entorno
 dotenv.config();
@@ -33,6 +33,7 @@ app.use('/api/auth', authRoutes);
 //rutas protegidas con middleare, es decir, se necesita un token valido para acceder
 app.use('/api/user', authenticateToken, userRoutes);
 app.use('/api/area', authenticateToken, areaRoutes);
+app.use('/api/proyects', authenticateToken, proyectsRoutes);
 
 
 //Iniciar la API
