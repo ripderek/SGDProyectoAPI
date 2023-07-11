@@ -26,9 +26,6 @@ const upload = multer({
         fieldSize: 10000000,
     }
 });
-
-
-
 module.exports = {
     upload
 };

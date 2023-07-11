@@ -29,7 +29,17 @@ const crear_usuario = async (req, res, next) => {
     }
 }
 const modificar_usuario = async (req, res, next) => {
-    return res.json({ mensaje: "Modificar Usuario" });
+    try {
+        const { nombres, tipoidentifiacion, identificacion, correo1, correo2, celular, firma } = req.body;
+        const { id } = req.params;
+
+        const users = await pool.query('call Editar_Usuario($1,$2,$3,$4,$5,$6,$7,$8)', [nombres, tipoidentifiacion, identificacion, correo1, correo2, celular, firma, id]);
+        console.log(users);
+        return res.status(200).json({ message: "Se edito el usuario" });
+    } catch (error) {
+        return res.status(404).json({ message: error.message });
+
+    }
 }
 const datos_Usuarios = async (req, res, next) => {
     try {
@@ -68,10 +78,22 @@ const imagen_user = async (req, res, next) => {
     //res.download('SRC/Assets/Wallpaper/Fri7zeuWIAA8Z7m.jpg'); para descargar xd 
 }
 
+const datos_usuario = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const users = await pool.query('select * from data_user_p($1)', [id]);
+        console.log(users);
+        return res.status(200).json(users.rows[0]);
+    } catch (error) {
+        next(error);
+    }
+}
+
 module.exports = {
     crear_usuario,
     modificar_usuario,
     datos_Usuarios,
     all_data_users,
-    imagen_user
+    imagen_user,
+    datos_usuario
 };
