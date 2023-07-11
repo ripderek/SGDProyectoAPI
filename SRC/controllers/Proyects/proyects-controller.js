@@ -24,8 +24,22 @@ const crear_categoria = async (req, res, next) => {
         return res.status(404).json({ message: error.message });
     }
 }
+const proyectos_areas = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+
+        const users = await pool.query('select * from proyectos_areas($1)', [id]);
+        console.log(users);
+        return res.status(200).json(users.rows);
+    } catch (error) {
+        next(error);
+    }
+}
+
+
 
 module.exports = {
     crear_proyecto,
-    crear_categoria
+    crear_categoria,
+    proyectos_areas
 };

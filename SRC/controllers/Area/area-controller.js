@@ -15,16 +15,18 @@ const crear_area = async (req, res, next) => {
 
         //Recibir un parametro para saber si se va a ingresar un area padre o hijo para no estar creando dos funciones xd 
         const { area_padre } = req.body;
+        const { prefijo } = req.body;
+
 
         //area_padre = string, int, bool, url asdasdsad
         //Ty const string {area_padre} = req.bidy
 
         if (area_padre === "None") {
-            const area = await pool.query('Call crear_area_padre($1,$2)', [nombre_area, foto]);
+            const area = await pool.query('Call crear_area_padre($1,$2,$3)', [nombre_area, foto, prefijo]);
             console.log(area);
         }
         else {
-            const area = await pool.query('Call crear_area_hijo($1,$2,$3)', [nombre_area, foto, area_padre]);
+            const area = await pool.query('Call crear_area_hijo($1,$2,$3,$4)', [nombre_area, foto, area_padre, prefijo]);
             console.log(area);
         }
         return res.status(200).json({ message: "Se creo el area" });
