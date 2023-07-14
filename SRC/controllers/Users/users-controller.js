@@ -168,6 +168,44 @@ const actualizar_contrasena = async (req, res, next) => {
     }
 }
 
+
+const actualizar_contrasena_admin = async (req, res, next) => {
+    try {
+        const { contra_nueva, contra_nueva1, id } = req.body;
+        if (contra_nueva === contra_nueva1) {
+
+            const users = await pool.query('call Cambiar_Contra_admin($1,$2)', [contra_nueva, id]);
+
+            return res.status(200).json({ message: "Se edito el usuario" });
+        } else {
+            return res.status(404).json({ message: "Las contrasenas no coinciden" });
+        }
+
+    } catch (error) {
+        console.log(error);
+        return res.status(404).json({ message: error.message });
+
+    }
+}
+
+
+const deshabilitar_usuario = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        console.log("CambiarEstado user");
+        console.log(id);
+        const users = await pool.query('call Deshabilitar_Usuario($1)', [id]);
+        console.log(users);
+        return res.status(200).json({ message: "Se Deshabilito el usuario" });
+    } catch (error) {
+        console.log("este es el error");
+        console.log(error);
+        return res.status(404).json({ message: error.message });
+    }
+}
+
+
+
 module.exports = {
     crear_usuario,
     modificar_usuario,
@@ -177,5 +215,7 @@ module.exports = {
     datos_usuario,
     cambiar_foto,
     actualizar_contrasena,
-    crear_usuario_area
+    crear_usuario_area,
+    actualizar_contrasena_admin,
+    deshabilitar_usuario
 };

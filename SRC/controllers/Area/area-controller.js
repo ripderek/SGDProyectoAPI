@@ -192,6 +192,19 @@ const cambiar_foto = async (req, res, next) => {
     }
 }
 
+const deshabilitar_usuario_area = async (req, res, next) => {
+    try {
+        //agregar un usuario a un area
+        const { p_id_area, p_id_user } = req.body;
+        const data_area = await pool.query('Call Deshabilitar_Usuario_Area($1,$2)', [p_id_area, p_id_user]);
+        console.log(data_area);
+
+        return res.status(200).json({ message: "Se expuls'o al usuario del area" });
+    } catch (error) {
+        console.log(error);
+        return res.status(404).json({ message: error.message });
+    }
+}
 
 module.exports = {
     crear_area,
@@ -207,4 +220,5 @@ module.exports = {
     areas_usuarios,
     editar_datos_area,
     cambiar_foto,
+    deshabilitar_usuario_area
 };
