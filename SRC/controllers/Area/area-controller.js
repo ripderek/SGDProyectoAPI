@@ -32,7 +32,7 @@ const crear_area = async (req, res, next) => {
         return res.status(200).json({ message: "Se creo el area" });
     } catch (error) {
         console.log(error);
-        next(error);
+        return res.status(404).json({ message: error.message });
     }
 }
 
@@ -53,7 +53,7 @@ const relacionar_usuario_area = async (req, res, next) => {
         return res.status(200).json({ message: "Se asigno el usuario al area" });
     } catch (error) {
         console.log(error);
-        next(error)
+        return res.status(404).json({ message: error.message });
     }
 }
 const usuarios_areas = async (req, res, next) => {
@@ -64,8 +64,8 @@ const usuarios_areas = async (req, res, next) => {
         console.log(user.rows);
         return res.status(200).json(user.rows);
     } catch (error) {
-        console.log(error);
-        next(error)
+        console.log('asdas' + error);
+        return res.status(404).json({ message: error.message });
     }
 }
 const usuarios_sin_areas = async (req, res, next) => {
@@ -76,8 +76,8 @@ const usuarios_sin_areas = async (req, res, next) => {
         console.log(user.rows);
         return res.status(200).json(user.rows);
     } catch (error) {
-        console.log(error);
-        next(error)
+        console.log("Sasd" + error);
+        return res.status(404).json({ message: error.message });
     }
 }
 
@@ -161,6 +161,36 @@ const areas_jerarquias = async (req, res, next) => {
     }
 }
 
+const editar_datos_area = async (req, res, next) => {
+    try {
+        //agregar un usuario a un area
+        const { p_nombre_area, p_prefijo_area, id } = req.body;
+        const data_area = await pool.query('Call Editar_Area($1,$2,$3)', [p_nombre_area, p_prefijo_area, id]);
+        return res.status(200).json({ message: "Se edito el area" });
+    } catch (error) {
+        console.log(error);
+        return res.status(404).json({ message: error.message });
+    }
+}
+const cambiar_foto = async (req, res, next) => {
+    try {
+        //obtener la URL de la Imagen Subida del area
+        const { file } = req
+        const p_url_foto = `${ipFileServer}${file?.filename}`;
+        //obtener los atributos mediante el form body
+        const { id } = req.body;
+
+        //area_padre = string, int, bool, url asdasdsad
+        //Ty const string {area_padre} = req.bidy
+        const data_area = await pool.query('Call cambiar_foto_area($1,$2)', [p_url_foto, id]);
+        console.log(data_area);
+
+        return res.status(200).json({ message: "Se cambio la foto" });
+    } catch (error) {
+        console.log(error);
+        return res.status(404).json({ message: error.message });
+    }
+}
 
 
 module.exports = {
@@ -174,5 +204,7 @@ module.exports = {
     data_area_id,
     imagen_area,
     areas_jerarquias,
-    areas_usuarios
+    areas_usuarios,
+    editar_datos_area,
+    cambiar_foto,
 };

@@ -25,9 +25,46 @@ const crear_usuario = async (req, res, next) => {
         console.log(users);
         return res.status(200).json({ message: "Se creo el usuario" });
     } catch (error) {
-        return res.status(404).json({ message: error.constraint, });
+        console.log(error);
+        return res.status(404).json({ message: error.message });
     }
 }
+
+
+const crear_usuario_area = async (req, res, next) => {
+    try {
+
+        //file de la foto
+        const { file } = req
+        const foto = `${ipFileServer}${file?.filename}`;
+        //crear el user en la BD
+        const { nombres } = req.body;
+        const { tipo_identificacion } = req.body;
+        const { identificacion } = req.body;
+        const { correo1 } = req.body;
+        const { correo2 } = req.body;
+        const { celular } = req.body;
+        const { firma } = req.body;
+        const { id_area } = req.body;
+        const { rol } = req.body;
+
+        console.log("Eeste es el rol" + rol);
+        if (!rol) {
+            return res.status(404).json({ message: "Escoja un rol" });
+        } else {
+
+            const users = await pool.query('Call Crear_Usuario_area($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)', [nombres, tipo_identificacion, identificacion, correo1, correo2, celular, foto, firma, id_area, rol]);
+            console.log(users);
+            return res.status(200).json({ message: "Se creo el usuario" });
+        }
+    } catch (error) {
+        console.log(error);
+        return res.status(404).json({ message: error.message });
+    }
+}
+
+
+
 const modificar_usuario = async (req, res, next) => {
     try {
         const { nombres, tipoidentifiacion, identificacion, correo1, correo2, celular, firma } = req.body;
@@ -89,11 +126,56 @@ const datos_usuario = async (req, res, next) => {
     }
 }
 
+const cambiar_foto = async (req, res, next) => {
+    try {
+
+        //file de la foto
+        const { file } = req
+        const foto = `${ipFileServer}${file?.filename}`;
+        //crear el user en la BD
+        const { id_user } = req.body;
+
+        const users = await pool.query('Call Cambiar_Foto($1,$2)', [foto, id_user]);
+        console.log(id_user + foto);
+        return res.status(200).json({ message: "Se cambio la foto" });
+    } catch (error) {
+        return res.status(404).json({ message: error.constraint });
+    }
+}
+const actualizar_contrasena = async (req, res, next) => {
+    try {
+        const { contra_nueva, contra_nueva1, contra_actual, id } = req.body;
+        if (contra_nueva === contra_nueva1) {
+            //primero verificar si la contrase actual y el id coinciden 
+            const verific = await pool.query('select * from verficiar_contrasena_id($1,$2)', [contra_actual, id]);
+            console.log(verific);
+
+            if (verific.rowCount === 0)
+                return res.status(404).json({ message: "La contrasena alctual no coincide" });
+            else { const users = await pool.query('call cambiar_contra($1,$2,$3)', [contra_nueva, contra_actual, id]); }
+
+            // const users = await pool.query('call cambiar_contra($1,$2,$3)', [contra_nueva, contra_actual, id]);
+            //console.log('Aqui va el cambio de contra');
+            return res.status(200).json({ message: "Se edito el usuario" });
+        } else {
+            return res.status(404).json({ message: "Las contrasenas no coinciden" });
+        }
+
+    } catch (error) {
+        console.log(error);
+        return res.status(404).json({ message: error.message });
+
+    }
+}
+
 module.exports = {
     crear_usuario,
     modificar_usuario,
     datos_Usuarios,
     all_data_users,
     imagen_user,
-    datos_usuario
+    datos_usuario,
+    cambiar_foto,
+    actualizar_contrasena,
+    crear_usuario_area
 };
