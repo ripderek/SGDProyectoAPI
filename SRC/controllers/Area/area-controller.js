@@ -85,7 +85,8 @@ const areas_usuarios = async (req, res, next) => {
     try {
         //agregar un usuario a un area
         const { id } = req.params;
-        const user = await pool.query('select * from usuarios_areas_rol($1)', [id]);
+        const { identi } = req.body;
+        const user = await pool.query('select * from usuarios_areas_rol($1,$2)', [id, identi]);
         console.log(user.rows);
         return res.status(200).json(user.rows);
     } catch (error) {

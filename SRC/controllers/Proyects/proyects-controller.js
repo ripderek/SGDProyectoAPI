@@ -20,6 +20,18 @@ const crear_proyecto = async (req, res, next) => {
     }
 }
 
+const editar_categoria = async (req, res, next) => {
+    try {
+        const { p_nombres, p_prefijo, p_descripcion, p_id_categoria } = req.body;
+        const users = await pool.query('call Editar_Categoria($1,$2,$3,$4)', [p_nombres, p_prefijo, p_descripcion, p_id_categoria]);
+        console.log(users);
+        return res.status(200).json({ message: "Se creo edito la categoria" });
+    } catch (error) {
+        console.log(error);
+        return res.status(404).json({ message: error.message });
+    }
+}
+
 const subir_pdf = async (req, res, next) => {
     try {
         const { id } = req.body;
@@ -48,6 +60,16 @@ const crear_categoria = async (req, res, next) => {
         return res.status(404).json({ message: error.message });
     }
 }
+const estado_categoria = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const users = await pool.query('call Estado_Categoria($1)', [id]);
+        console.log(users);
+        return res.status(200).json({ message: "Se edito el estado de  la categoria" });
+    } catch (error) {
+        return res.status(404).json({ message: error.message });
+    }
+}
 const proyectos_areas = async (req, res, next) => {
     try {
         const { id } = req.params;
@@ -69,6 +91,15 @@ const all_categorias = async (req, res, next) => {
     }
 }
 
+const list_categorias = async (req, res, next) => {
+    try {
+        const users = await pool.query('select * from Lis_categorias()');
+        console.log(users);
+        return res.status(200).json(users.rows);
+    } catch (error) {
+        return res.status(404).json({ message: error.message });
+    }
+}
 
 const roles_proyecto = async (req, res, next) => {
     try {
@@ -120,5 +151,8 @@ module.exports = {
     roles_proyecto,
     subir_pdf,
     documentos_proyectos,
-    ver_pdf
+    ver_pdf,
+    list_categorias,
+    editar_categoria,
+    estado_categoria
 };

@@ -16,7 +16,7 @@ router.get('/data_area_user/:id', data_user_area);
 router.get('/data_area_id/:id', data_area_id)
 router.get('/Areaimagen/:id', imagen_area);
 router.get('/Jerarquias/:id', areas_jerarquias);
-router.get('/areas_usuario/:id', areas_usuarios);
+router.post('/areas_usuario/:id', areas_usuarios);
 router.post('/Editar_datos_area', editar_datos_area);
 router.post('/Deshabilitar_usuario_area', deshabilitar_usuario_area);
 
