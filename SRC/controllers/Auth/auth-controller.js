@@ -8,15 +8,20 @@ const verificaUser = async (req, res, next) => {
     try {
         const { correo, contra } = req.body;
 
-        const users = await pool.query('select Verification_Auth($1,$2)', [correo, contra]);
+        const users = await pool.query('select * from Verification_Auth($1,$2)', [correo, contra]);
         console.log(users);
         console.log(users.rows[0]);
         let verification = users.rows[0];
+
+
         //Extraer el resultado del bool para saber si el login es correcto
-        let result = verification.verification_auth;
+        let result = verification.verification;
         console.log('The result is:' + result);
-        //Si las credenciales son incorrectas
-        if (!result) return res.status(401).json({ error: "Credenciales Incorrectas" });
+
+        //Si el Login fallo es decir es diferente del estado 1
+        if (result != 1) return res.status(401).json({ error: verification.mensaje });
+
+
         //Si no entonces se le otorga un token xd
 
         const token = jwt.sign({
