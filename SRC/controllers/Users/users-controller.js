@@ -78,6 +78,21 @@ const modificar_usuario = async (req, res, next) => {
 
     }
 }
+
+const modificar_usuario_not_admin = async (req, res, next) => {
+    try {
+        const { nombres, tipoidentifiacion, identificacion, correo1, correo2, celular, firma } = req.body;
+        const { id } = req.params;
+
+        const users = await pool.query('call Editar_Usuario_not_admin($1,$2,$3,$4)', [correo1, celular, firma, id]);
+        console.log(users);
+        return res.status(200).json({ message: "Se edito el usuario" });
+    } catch (error) {
+        return res.status(404).json({ message: error.message });
+
+    }
+}
+
 const datos_Usuarios = async (req, res, next) => {
     try {
         const { id } = req.params;
@@ -217,5 +232,6 @@ module.exports = {
     actualizar_contrasena,
     crear_usuario_area,
     actualizar_contrasena_admin,
-    deshabilitar_usuario
+    deshabilitar_usuario,
+    modificar_usuario_not_admin
 };
