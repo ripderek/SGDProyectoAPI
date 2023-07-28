@@ -2,11 +2,10 @@
 const pool = require('../../db');
 const fs = require('fs');
 
-
-
-
 let ipFileServer = "../../uploads/proyectos/";
+const { extname } = require('path');
 const path = require('path');
+
 
 const crear_proyecto = async (req, res, next) => {
     try {
@@ -137,9 +136,73 @@ const ver_pdf = async (req, res) => {
         return res.status(404).json({ message: error.message });
 
     }
-
-
 }
+
+const guias_proyectos = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const users = await pool.query('select * from List_Guias_proyectos($1)', [id]);
+        console.log(users);
+        return res.status(200).json(users.rows);
+    } catch (error) {
+        return res.status(404).json({ message: error.message });
+    }
+}
+
+//Nuevo agregado desde la pc de Herrera
+let ipFileServerGuia = "../../uploads/Guias/";
+
+const subir_guia = async (req, res, next) => {
+    try {
+        const { id } = req.body;
+
+        const { file } = req;
+        const documento = `${ipFileServerGuia}${file?.filename}`;
+
+        //let ext = path.extname(file);
+
+        const { descripcion } = req.body;
+        console.log(documento);
+
+
+        const extension = extname(file.originalname);
+        const ext = file.originalname.split(extension)[1];
+
+        console.log(extension);
+        console.log(ext);
+        console.log("aqui se envia el archivo");
+        // console.log(id,documento,ext.substr(1),descripcion);
+
+        const users = await pool.query('call subir_guia($1,$2,$3,$4)', [documento, id, extension, descripcion]);
+        console.log(users);
+
+        return res.status(200).json({ message: "se subio el archivo" });
+    } catch (error) {
+        console.log(error);
+        return res.status(404).json({ message: error.message });
+    }
+}
+
+const download_guia = async (req, res) => {
+    console.log("descargar guia");
+    try {
+        const { link } = req.body;
+
+        const urlArchivos = path.join(__dirname, "../" + link)
+
+        console.log(urlArchivos);
+        return res.download(urlArchivos);
+
+        //res.download( link);
+        //console.log(link);
+        //return res.status(200).json({ message: "se descarga el archivo" });
+    } catch (error) {
+        console.log(error);
+        return res.status(404).json({ message: error.message });
+    }
+}
+
+
 
 
 
@@ -154,5 +217,8 @@ module.exports = {
     ver_pdf,
     list_categorias,
     editar_categoria,
-    estado_categoria
+    estado_categoria,
+    guias_proyectos,
+    subir_guia,
+    download_guia
 };
