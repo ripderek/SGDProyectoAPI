@@ -12,6 +12,8 @@ const authRoutes = require('./routes/auth-routes.js');
 const userRoutes = require('./routes/users-routes.js');
 const areaRoutes = require('./routes/area-routes.js');
 const proyectsRoutes = require('./routes/proyects-routes.js');
+const empresaRoutes = require('./routes/empresa-routes.js');
+const publicRoutes = require('./routes/public-routes.js');
 
 //config entorno
 dotenv.config();
@@ -29,12 +31,14 @@ app.use(cookieParser());
 //esta ruta no estara protegida por un middleware ya que serivira para verificar el
 //inicio de sesion
 app.use('/api/auth', authRoutes);
+//acceso publico 
+app.use('/api/public', publicRoutes);
 
 //rutas protegidas con middleare, es decir, se necesita un token valido para acceder
 app.use('/api/user', authenticateToken, userRoutes);
 app.use('/api/area', authenticateToken, areaRoutes);
 app.use('/api/proyects', authenticateToken, proyectsRoutes);
-
+app.use('/api/empresa', authenticateToken, empresaRoutes);
 
 //Iniciar la API
 app.listen(PORT, () => console.log('SERVER ON PORT' + PORT));
