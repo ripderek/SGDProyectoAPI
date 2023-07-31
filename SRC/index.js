@@ -14,6 +14,7 @@ const areaRoutes = require('./routes/area-routes.js');
 const proyectsRoutes = require('./routes/proyects-routes.js');
 const empresaRoutes = require('./routes/empresa-routes.js');
 const publicRoutes = require('./routes/public-routes.js');
+const flujoRoutes = require('./routes/flujo-routes.js');
 
 //config entorno
 dotenv.config();
@@ -39,6 +40,7 @@ app.use('/api/user', authenticateToken, userRoutes);
 app.use('/api/area', authenticateToken, areaRoutes);
 app.use('/api/proyects', authenticateToken, proyectsRoutes);
 app.use('/api/empresa', authenticateToken, empresaRoutes);
+app.use('/api/flujo', flujoRoutes);
 
 //Iniciar la API
 app.listen(PORT, () => console.log('SERVER ON PORT' + PORT));

@@ -47,8 +47,9 @@ const all_data_area = async (req, res, next) => {
 const relacionar_usuario_area = async (req, res, next) => {
     try {
         //agregar un usuario a un area
-        const { p_id_user, p_id_area, p_id_rol } = req.body;
-        const user = await pool.query('Call usuarios_areas($1,$2,$3)', [p_id_user, p_id_area, p_id_rol]);
+        //no se debe de enviar el rol simplemente se ingresa como false y luego se edita para que se haga admin de area 
+        const { p_id_user, p_id_area } = req.body;
+        const user = await pool.query('Call usuarios_areas($1,$2)', [p_id_user, p_id_area]);
         console.log(user);
         return res.status(200).json({ message: "Se asigno el usuario al area" });
     } catch (error) {
@@ -108,7 +109,6 @@ const todos_los_roles = async (req, res, next) => {
 }
 const data_user_area = async (req, res, next) => {
     try {
-        //agregar un usuario a un area
         const { id } = req.params;
         const data_user = await pool.query('select * from data_user_area($1)', [id]);
         console.log(data_user.rows);
@@ -207,6 +207,23 @@ const deshabilitar_usuario_area = async (req, res, next) => {
     }
 }
 
+//cambiar el estado del usuario dentro del area 
+//si es admin => normal
+//else normal => admin
+const cambiar_rol_usuario_admin = async (req, res, next) => {
+    try {
+        //agregar un usuario a un area
+        const { p_id_relacion } = req.body;
+        const data_area = await pool.query('Call Cambiar_Rol_Area($1)', [p_id_relacion]);
+        console.log(p_id_relacion);
+        console.log(data_area);
+        return res.status(200).json({ message: "Se cambio su rol dentro del area" });
+    } catch (error) {
+        console.log(error);
+        return res.status(404).json({ message: error.message });
+    }
+}
+
 module.exports = {
     crear_area,
     all_data_area,
@@ -221,5 +238,6 @@ module.exports = {
     areas_usuarios,
     editar_datos_area,
     cambiar_foto,
-    deshabilitar_usuario_area
+    deshabilitar_usuario_area,
+    cambiar_rol_usuario_admin
 };

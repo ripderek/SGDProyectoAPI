@@ -46,19 +46,15 @@ const crear_usuario_area = async (req, res, next) => {
         const { celular } = req.body;
         const { firma } = req.body;
         const { id_area } = req.body;
-        const { rol } = req.body;
 
-        console.log("Eeste es el rol" + rol);
-        if (!rol) {
-            return res.status(404).json({ message: "Escoja un rol" });
-        } else {
+        //console.log("Eeste es el rol" + rol);
 
-            const users = await pool.query('Call Crear_Usuario_area($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)', [nombres, tipo_identificacion, identificacion, correo1, correo2, celular, foto, firma, id_area, rol]);
-            console.log(users);
-            return res.status(200).json({ message: "Se creo el usuario" });
-        }
+
+        const users = await pool.query('Call Crear_Usuario_area($1,$2,$3,$4,$5,$6,$7,$8,$9)', [nombres, tipo_identificacion, identificacion, correo1, correo2, celular, foto, firma, id_area]);
+        console.log(users);
+        return res.status(200).json({ message: "Se creo el usuario" });
+
     } catch (error) {
-        console.log(error);
         return res.status(404).json({ message: error.message });
     }
 }

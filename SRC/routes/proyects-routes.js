@@ -11,7 +11,6 @@ router.post('/crear_proyecto', crear_proyecto);
 router.post('/crear_categoria', crear_categoria);
 router.post('/editar_categoria', editar_categoria);
 router.post('/estado/:id', estado_categoria);
-
 router.get('/proyectos_areas/:id', proyectos_areas);
 router.get('/categorias_proyecto', all_categorias);
 router.post('/roles_proyecto', roles_proyecto);
