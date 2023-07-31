@@ -40,7 +40,7 @@ app.use('/api/user', authenticateToken, userRoutes);
 app.use('/api/area', authenticateToken, areaRoutes);
 app.use('/api/proyects', authenticateToken, proyectsRoutes);
 app.use('/api/empresa', authenticateToken, empresaRoutes);
-app.use('/api/flujo', flujoRoutes);
+app.use('/api/flujo', authenticateToken, flujoRoutes);
 
 //Iniciar la API
 app.listen(PORT, () => console.log('SERVER ON PORT' + PORT));
