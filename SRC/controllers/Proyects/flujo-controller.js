@@ -21,8 +21,18 @@ const ver_niveles = async (req, res, next) => {
         return res.status(404).json({ message: error.message });
     }
 }
+const ver_niveles_activos = async (req, res, next) => {
+    try {
+        const users = await pool.query('select * from ver_niveles_activos()');
+        console.log(users);
+        return res.status(200).json(users.rows);
+    } catch (error) {
+        return res.status(404).json({ message: error.message });
+    }
+}
 
 module.exports = {
     crear_nivel,
-    ver_niveles
+    ver_niveles,
+    ver_niveles_activos
 };
