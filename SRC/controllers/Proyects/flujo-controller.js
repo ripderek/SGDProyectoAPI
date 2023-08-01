@@ -31,8 +31,53 @@ const ver_niveles_activos = async (req, res, next) => {
     }
 }
 
+const crear_jerarquias_nivel = async (req, res, next) => {
+    try {
+        console.log("aqui se crea la jeraraui");
+        const { id } = req.params;
+        const { list_niveles } = req.body;
+        // console.log(users);
+        console.log(id);
+        console.log(list_niveles);
+        const idcabezera = list_niveles[0].nivel_id;
+        console.log("Este va a ser el id de la cabezera" + idcabezera);
+        //primero crear el tipo de jerarquia enviando el titulo y luego recorrer el objeto y enviar uno por uno a la tabla jerarquias
+        //
+        const users = await pool.query('call Crear_Tipo_Jerarquias($1)', [id]);
+        //
+        //aqui recorrer con un map el list niveles y enviar uno por uno a la base de datos
+
+        list_niveles.map((task) => {
+            console.log(task.nivel_titulo);
+            //aqui se envia como cabecera el id del primer nivel 
+            crear_jerarquias_nivel_2(task.id_p, task.nivel_id, idcabezera);
+        });
+
+
+        return res.status(200).json({ message: "Se creo el flujo" });
+    } catch (error) {
+        console.log(error);
+        return res.status(404).json({ message: error.message });
+    }
+}
+
+
+
+const crear_jerarquias_nivel_2 = async (id_padre, p_id_nivel_hijo, p_id_cabecera) => {
+    try {
+        //aqui se envia como cabecera el id del primer nivel 
+        if (id_padre !== 0) {
+            const niveles = await pool.query('call Crear_Jerarquias_Niveles($1,$2,$3)', [id_padre, p_id_nivel_hijo, p_id_cabecera]);
+        }
+    } catch (error) {
+        console.log(error);
+    }
+}
+
+
 module.exports = {
     crear_nivel,
     ver_niveles,
-    ver_niveles_activos
+    ver_niveles_activos,
+    crear_jerarquias_nivel
 };
