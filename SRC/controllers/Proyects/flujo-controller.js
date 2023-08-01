@@ -74,10 +74,32 @@ const crear_jerarquias_nivel_2 = async (id_padre, p_id_nivel_hijo, p_id_cabecera
     }
 }
 
+const ver_tipos_jerarquias = async (req, res, next) => {
+    try {
+        const users = await pool.query('select * from Lista_tipos_jerarquias()');
+        console.log(users);
+        return res.status(200).json(users.rows);
+    } catch (error) {
+        return res.status(404).json({ message: error.message });
+    }
+}
+
+const ver_detalles__flujos = async (req, res, next) => {
+    try {
+        const { id } = req.params
+        const users = await pool.query('select * from Detalle_jerarquia($1)', [id]);
+        console.log(users);
+        return res.status(200).json(users.rows);
+    } catch (error) {
+        return res.status(404).json({ message: error.message });
+    }
+}
 
 module.exports = {
     crear_nivel,
     ver_niveles,
     ver_niveles_activos,
-    crear_jerarquias_nivel
+    crear_jerarquias_nivel,
+    ver_tipos_jerarquias,
+    ver_detalles__flujos
 };
