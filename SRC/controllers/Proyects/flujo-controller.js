@@ -31,6 +31,29 @@ const ver_niveles_activos = async (req, res, next) => {
     }
 }
 
+const crear_flujo_proyecto = async (req, res, next) => {
+    try {
+        const { id, id2 } = req.params;
+        const { list_niveles } = req.body;
+
+        console.log(id);
+        console.log(id2);
+        const users = await pool.query('call Crear_flujo_Proyecto($1,$2)', [id, id2]);
+        console.log(users);
+
+        list_niveles.map((task) => {
+            console.log(task.nivel_titulo);
+            //aqui se envia como cabecera el id del primer nivel 
+            // crear_jerarquias_nivel_2(task.id_p, task.nivel_id, idcabezera);
+            crear_flujos_2();
+        });
+        return res.status(200).json({ message: "Se creo el nivel" });
+    } catch (error) {
+        console.log(error);
+        return res.status(404).json({ message: error.message });
+    }
+}
+
 const crear_jerarquias_nivel = async (req, res, next) => {
     try {
         console.log("aqui se crea la jeraraui");
@@ -62,7 +85,16 @@ const crear_jerarquias_nivel = async (req, res, next) => {
 }
 
 
+const crear_flujos_2 = async (p_id_departamtento, p_id_nivel, p_nivel) => {
+    try {
+        //aqui se envia como cabecera el id del primer nivel 
 
+        const niveles = await pool.query('call crear_niveles_proyectos($1,$2,$3)', [p_id_departamtento, p_id_nivel, p_nivel]);
+
+    } catch (error) {
+        console.log(error);
+    }
+}
 const crear_jerarquias_nivel_2 = async (id_padre, p_id_nivel_hijo, p_id_cabecera) => {
     try {
         //aqui se envia como cabecera el id del primer nivel 
@@ -83,11 +115,31 @@ const ver_tipos_jerarquias = async (req, res, next) => {
         return res.status(404).json({ message: error.message });
     }
 }
+const ver_tipos_jerarquias_activas = async (req, res, next) => {
+    try {
+        const users = await pool.query('select * from Lista_tipos_jerarquias_true()');
+        console.log(users);
+        return res.status(200).json(users.rows);
+    } catch (error) {
+        return res.status(404).json({ message: error.message });
+    }
+}
 
 const ver_detalles__flujos = async (req, res, next) => {
     try {
         const { id } = req.params
         const users = await pool.query('select * from Detalle_jerarquia($1)', [id]);
+        console.log(users);
+        return res.status(200).json(users.rows);
+    } catch (error) {
+        return res.status(404).json({ message: error.message });
+    }
+}
+
+const ver_detalles_niveles = async (req, res, next) => {
+    try {
+        const { id } = req.params
+        const users = await pool.query('select * from Detalle_Flujo($1)', [id]);
         console.log(users);
         return res.status(200).json(users.rows);
     } catch (error) {
@@ -101,5 +153,8 @@ module.exports = {
     ver_niveles_activos,
     crear_jerarquias_nivel,
     ver_tipos_jerarquias,
-    ver_detalles__flujos
+    ver_detalles__flujos,
+    ver_tipos_jerarquias_activas,
+    ver_detalles_niveles,
+    crear_flujo_proyecto
 };

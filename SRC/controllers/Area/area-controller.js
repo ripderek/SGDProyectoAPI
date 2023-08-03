@@ -224,6 +224,31 @@ const cambiar_rol_usuario_admin = async (req, res, next) => {
     }
 }
 
+//para crear los flujos 
+const areas_para_flujos = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const user = await pool.query('select * from Areas_para_flujo($1)', [id]);
+        console.log(user.rows);
+        return res.status(200).json(user.rows);
+    } catch (error) {
+        console.log('asdas' + error);
+        return res.status(404).json({ message: error.message });
+    }
+}
+
+const data_area_i = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const user = await pool.query('select * from Data_area_id($1)', [id]);
+        //console.log(user.rows);
+        return res.status(200).json(user.rows);
+    } catch (error) {
+        console.log('asdas' + error);
+        return res.status(404).json({ message: error.message });
+    }
+}
+
 module.exports = {
     crear_area,
     all_data_area,
@@ -239,5 +264,7 @@ module.exports = {
     editar_datos_area,
     cambiar_foto,
     deshabilitar_usuario_area,
-    cambiar_rol_usuario_admin
+    cambiar_rol_usuario_admin,
+    areas_para_flujos,
+    data_area_i
 };
