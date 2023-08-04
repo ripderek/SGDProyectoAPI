@@ -39,14 +39,17 @@ const crear_flujo_proyecto = async (req, res, next) => {
         console.log(id);
         console.log(id2);
         const users = await pool.query('call Crear_flujo_Proyecto($1,$2)', [id, id2]);
-        console.log(users);
+        //console.log(users);
+        console.log(list_niveles);
 
         list_niveles.map((task) => {
-            console.log(task.nivel_titulo);
+            //console.log(task.nivel_titulo);
             //aqui se envia como cabecera el id del primer nivel 
             // crear_jerarquias_nivel_2(task.id_p, task.nivel_id, idcabezera);
-            crear_flujos_2();
+            console.log("Aqui va el flujjo detalle");
+            crear_flujos_2(task.id_area_f, task.id_nivel_f, task.nivel);
         });
+
         return res.status(200).json({ message: "Se creo el nivel" });
     } catch (error) {
         console.log(error);
