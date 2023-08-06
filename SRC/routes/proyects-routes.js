@@ -1,7 +1,7 @@
 const { Router } = require('express');
 const router = Router();
 
-const { crear_proyecto, crear_categoria, proyectos_areas, all_categorias, roles_proyecto, subir_pdf, documentos_proyectos, ver_pdf, list_categorias, editar_categoria, estado_categoria, guias_proyectos, subir_guia, download_guia } = require('../controllers/Proyects/proyects-controller');
+const { crear_proyecto, crear_categoria, proyectos_areas, all_categorias, roles_proyecto, subir_pdf, documentos_proyectos, ver_pdf, list_categorias, editar_categoria, estado_categoria, guias_proyectos, subir_guia, download_guia, ver_flujo_proyecto } = require('../controllers/Proyects/proyects-controller');
 
 const { upload } = require('../middleware/multer_pdf');
 const { upload_guia } = require('../middleware/multer_guias');
@@ -21,5 +21,6 @@ router.get('/pdf/:id', ver_pdf);
 router.get('/guias/:id', guias_proyectos);
 router.post('/upload_guia', upload_guia.single('file'), subir_guia);
 router.post('/ver_guia', download_guia);
+router.get('/ver_flujo_proyecto/:id', ver_flujo_proyecto);
 
 module.exports = router;

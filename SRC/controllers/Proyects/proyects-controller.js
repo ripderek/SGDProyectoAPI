@@ -202,6 +202,18 @@ const download_guia = async (req, res) => {
     }
 }
 
+const ver_flujo_proyecto = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const users = await pool.query('select * from ver_FLujo_Proyecto($1)', [id]);
+        console.log(users);
+        return res.status(200).json(users.rows);
+    } catch (error) {
+        return res.status(404).json({ message: error.message });
+    }
+}
+
+
 
 
 
@@ -220,5 +232,6 @@ module.exports = {
     estado_categoria,
     guias_proyectos,
     subir_guia,
-    download_guia
+    download_guia,
+    ver_flujo_proyecto
 };
