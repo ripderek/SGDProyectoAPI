@@ -38,19 +38,10 @@ const crear_flujo_proyecto = async (req, res, next) => {
 
         console.log(id);
         console.log(id2);
-        const users = await pool.query('call Crear_flujo_Proyecto($1,$2)', [id, id2]);
-        //console.log(users);
+        console.log("Lista de los niveles");
         console.log(list_niveles);
-
-        list_niveles.map((task) => {
-            //console.log(task.nivel_titulo);
-            //aqui se envia como cabecera el id del primer nivel 
-            // crear_jerarquias_nivel_2(task.id_p, task.nivel_id, idcabezera);
-            console.log("Aqui va el flujjo detalle");
-            crear_flujos_2(task.id_area_f, task.id_nivel_f, task.nivel);
-        });
-
-        return res.status(200).json({ message: "Se creo el nivel" });
+        const users = await pool.query('call Crear_flujo_Proyecto($1,$2,$3)', [id, id2, JSON.stringify(list_niveles)]);
+        return res.status(200).json({ message: "Se creo el flujo del proyecto" });
     } catch (error) {
         console.log(error);
         return res.status(404).json({ message: error.message });
@@ -87,17 +78,6 @@ const crear_jerarquias_nivel = async (req, res, next) => {
     }
 }
 
-
-const crear_flujos_2 = async (p_id_departamtento, p_id_nivel, p_nivel) => {
-    try {
-        //aqui se envia como cabecera el id del primer nivel 
-
-        const niveles = await pool.query('call crear_niveles_proyectos($1,$2,$3)', [p_id_departamtento, p_id_nivel, p_nivel]);
-
-    } catch (error) {
-        console.log(error);
-    }
-}
 const crear_jerarquias_nivel_2 = async (id_padre, p_id_nivel_hijo, p_id_cabecera) => {
     try {
         //aqui se envia como cabecera el id del primer nivel 
