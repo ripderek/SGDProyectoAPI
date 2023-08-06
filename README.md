@@ -13,9 +13,10 @@ pnpm dev
 ### Second, create .env
 
 variables de entorno para la conexion con la base de datos se importa en config.js
-
+```bash
 - DB_USER =
 - DB_PASSWORD=
 - DB_HOST=
 - DB_DATABASE=
 - DB_PORT=
+```
