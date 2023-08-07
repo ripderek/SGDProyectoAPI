@@ -43,6 +43,7 @@ const subir_pdf = async (req, res, next) => {
         console.log(users);
         return res.status(200).json({ message: "se subio el archivo" });
     } catch (error) {
+        console.log(error);
         return res.status(404).json({ message: error.message });
     }
 }
