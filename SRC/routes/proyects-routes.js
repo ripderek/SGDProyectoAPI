@@ -1,7 +1,7 @@
 const { Router } = require('express');
 const router = Router();
 
-const { crear_proyecto, crear_categoria, proyectos_areas, all_categorias, roles_proyecto, subir_pdf, documentos_proyectos, ver_pdf, list_categorias, editar_categoria, estado_categoria, guias_proyectos, subir_guia, download_guia, ver_flujo_proyecto, borradores_proyecto, proyect_data, niveles_estado, ver_flujo_proyecto_nivel2, subir_primer_nivel } = require('../controllers/Proyects/proyects-controller');
+const { crear_proyecto, crear_categoria, proyectos_areas, all_categorias, roles_proyecto, subir_pdf, documentos_proyectos, ver_pdf, list_categorias, editar_categoria, estado_categoria, guias_proyectos, subir_guia, download_guia, ver_flujo_proyecto, borradores_proyecto, proyect_data, niveles_estado, ver_flujo_proyecto_nivel2, subir_primer_nivel, id_doc, subir_level, publicar_doc } = require('../controllers/Proyects/proyects-controller');
 
 const { upload } = require('../middleware/multer_pdf');
 const { upload_guia } = require('../middleware/multer_guias');
@@ -27,6 +27,8 @@ router.get('/data_pro/:id', proyect_data);
 router.get('/estados_niveles/:id', niveles_estado);
 router.get('/ver_niveles_actual/:id', ver_flujo_proyecto_nivel2);
 router.post('/subir_nivel', subir_primer_nivel);
-
+router.get('/UltimoPDF/:id', id_doc);
+router.post('/SubirLevel/:id', subir_level);
+router.post('/Publicar/:id', publicar_doc);
 
 module.exports = router;
