@@ -1,14 +1,19 @@
+// NUEVO--------------------------------------------
 const pool = require('../../db');
 const jwt = require('jsonwebtoken');
 const { serialize } = require('cookie');
 
+//VerficarUsuario con el correo que devuelve google y otorgar token
 
-//VerficarUsuario y otorgar token
-const verificaUser = async (req, res, next) => {
+const verificaUserGoogle = async  (req, res, next) => {
     try {
-        const { correo, contra } = req.body;
 
-        const users = await pool.query('select * from Verification_Auth($1,$2)', [correo, contra]);
+        console.log(req.body);
+        const { email} = req.body;
+
+        console.log('Correo electrónico:', email);
+        
+        const users = await pool.query('select * from verification_auth_google($1)', [email]);
         console.log(users);
         console.log(users.rows[0]);
         let verification = users.rows[0];
@@ -26,7 +31,7 @@ const verificaUser = async (req, res, next) => {
 
         const token = jwt.sign({
             exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 30,
-            email: correo,
+            email: email,
         }, 'SECRET') //el secret deberia estan en el .env
 
         const serialized = serialize('myTokenName', token, {
@@ -42,7 +47,7 @@ const verificaUser = async (req, res, next) => {
 
         //Guardar el id del usuario en el json
         //Ver si el usuario es admin general y guardar en json para que se guarde como cookie
-        const data_auth = await pool.query('select  * from Auth_Data($1,$2)', [correo, contra]);
+        const data_auth = await pool.query('select  * from auth_data_google($1)', [email]);
         console.log(data_auth.rows[0]);
         //parsear los data_auth para enviar en un solo json
         let data = data_auth.rows[0];
@@ -51,11 +56,14 @@ const verificaUser = async (req, res, next) => {
 
         //Ver si el usuario es admin de area y guardar en json para que se guarde como cookie
         return res.json({ verification: "true", token: token, id: userd, AD: isadmin });
+
     } catch (error) {
         next(error);
     }
 }
 
 module.exports = {
-    verificaUser,
+    verificaUserGoogle,
 };
+
+// NUEVO--------------------------------------------

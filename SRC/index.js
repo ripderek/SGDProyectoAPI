@@ -14,6 +14,8 @@ const areaRoutes = require('./routes/area-routes.js');
 const proyectsRoutes = require('./routes/proyects-routes.js');
 const empresaRoutes = require('./routes/empresa-routes.js');
 const publicRoutes = require('./routes/public-routes.js');
+//----------------NUEVO-----------------------
+const googleRoutes = require("./routes/google-routes.js");
 
 //config entorno
 dotenv.config();
@@ -33,6 +35,10 @@ app.use(cookieParser());
 app.use('/api/auth', authRoutes);
 //acceso publico 
 app.use('/api/public', publicRoutes);
+//----------NUEVO-----------------------------------------
+app.use('/api/authgoogle', googleRoutes);
+//----------NUEVO-----------------------------------------
+
 
 //rutas protegidas con middleare, es decir, se necesita un token valido para acceder
 app.use('/api/user', authenticateToken, userRoutes);
