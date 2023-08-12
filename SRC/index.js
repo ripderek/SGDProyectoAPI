@@ -16,6 +16,7 @@ const empresaRoutes = require('./routes/empresa-routes.js');
 const publicRoutes = require('./routes/public-routes.js');
 //----------------NUEVO-----------------------
 const googleRoutes = require("./routes/google-routes.js");
+const flujoRoutes = require('./routes/flujo-routes.js');
 
 //config entorno
 dotenv.config();
@@ -23,7 +24,8 @@ dotenv.config();
 //Consfigurar el puerto donde se va abrir la API
 const app = express();
 const PORT = 4000;
-const corsOptions = { credentials: true, origin: "http://localhost:3000" };
+//http://192.168.56.1:3000
+const corsOptions = { credentials: true, origin: ["http://localhost:3000", "http://192.168.56.1:3000"] };
 
 app.use(cors(corsOptions));
 app.use(express.json());
@@ -45,6 +47,7 @@ app.use('/api/user', authenticateToken, userRoutes);
 app.use('/api/area', authenticateToken, areaRoutes);
 app.use('/api/proyects', authenticateToken, proyectsRoutes);
 app.use('/api/empresa', authenticateToken, empresaRoutes);
+app.use('/api/flujo', authenticateToken, flujoRoutes);
 
 //Iniciar la API
 app.listen(PORT, () => console.log('SERVER ON PORT' + PORT));

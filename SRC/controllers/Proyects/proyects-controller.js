@@ -34,15 +34,16 @@ const editar_categoria = async (req, res, next) => {
 const subir_pdf = async (req, res, next) => {
     try {
         const { id } = req.body;
-
+        const { descripcion } = req.body;
         const { file } = req;
         const documento = `${ipFileServer}${file?.filename}`;
+        console.log(descripcion);
 
-
-        const users = await pool.query('call documento_proyecto($1,$2)', [documento, id]);
+        const users = await pool.query('call documento_proyecto($1,$2,$3)', [documento, id, descripcion]);
         console.log(users);
         return res.status(200).json({ message: "se subio el archivo" });
     } catch (error) {
+        console.log(error);
         return res.status(404).json({ message: error.message });
     }
 }
@@ -72,8 +73,9 @@ const estado_categoria = async (req, res, next) => {
 const proyectos_areas = async (req, res, next) => {
     try {
         const { id } = req.params;
+        const { id2 } = req.params;
 
-        const users = await pool.query('select * from proyectos_areas($1)', [id]);
+        const users = await pool.query('select * from proyectos_areas($1,$2)', [id, id2]);
         console.log(users);
         return res.status(200).json(users.rows);
     } catch (error) {
@@ -202,8 +204,115 @@ const download_guia = async (req, res) => {
     }
 }
 
+const ver_flujo_proyecto = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const users = await pool.query('select * from ver_FLujo_Proyecto($1)', [id]);
+        console.log(users);
+        return res.status(200).json(users.rows);
+    } catch (error) {
+        return res.status(404).json({ message: error.message });
+    }
+}
+
+const borradores_proyecto = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const users = await pool.query('select * from ver_borradores_proyecto($1)', [id]);
+        console.log(users);
+        return res.status(200).json(users.rows);
+    } catch (error) {
+        return res.status(404).json({ message: error.message });
+    }
+}
+
+const proyect_data = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const users = await pool.query('select * from data_proyect($1)', [id]);
+        console.log(users);
+        return res.status(200).json(users.rows);
+    } catch (error) {
+        return res.status(404).json({ message: error.message });
+    }
+}
+
+const niveles_estado = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const users = await pool.query('select * from niveles_estado_proyecto($1)', [id]);
+        console.log(users);
+        return res.status(200).json(users.rows);
+    } catch (error) {
+        return res.status(404).json({ message: error.message });
+    }
+}
+
+const ver_flujo_proyecto_nivel2 = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const users = await pool.query('select * from ver_FLujo_Proyecto_nivel2($1)', [id]);
+        console.log(users);
+        return res.status(200).json(users.rows);
+    } catch (error) {
+        return res.status(404).json({ message: error.message });
+    }
+}
+
+const subir_primer_nivel = async (req, res, next) => {
+    try {
+        const { list_niveles } = req.body;
+        const users = await pool.query('call subir_primer_nivel($1)', [JSON.stringify(list_niveles)]);
+        return res.status(200).json({ message: "Se subio de nivel el proyecto" });
+    } catch (error) {
+        console.log(error);
+        return res.status(404).json({ message: error.message });
+    }
+}
+
+const id_doc = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const users = await pool.query('select * from doc_id($1)', [id]);
+        console.log(users);
+        return res.status(200).json(users.rows[0]);
+    } catch (error) {
+        return res.status(404).json({ message: error.message });
+    }
+}
+
+const subir_level = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const users = await pool.query('call subir_niveles($1)', [id]);
+        console.log(users);
+        return res.status(200).json(users.rows[0]);
+    } catch (error) {
+        return res.status(404).json({ message: error.message });
+    }
+}
 
 
+const publicar_doc = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const users = await pool.query('call publicar_doc($1)', [id]);
+        console.log(users);
+        return res.status(200).json(users.rows[0]);
+    } catch (error) {
+        return res.status(404).json({ message: error.message });
+    }
+}
+
+const proyectos_publicados = async (req, res, next) => {
+    try {
+        const users = await pool.query('select * from ver_proyectos_publicados()');
+        console.log(users);
+        return res.status(200).json(users.rows);
+    } catch (error) {
+        return res.status(404).json({ message: error.message });
+    }
+}
 
 
 module.exports = {
@@ -220,5 +329,15 @@ module.exports = {
     estado_categoria,
     guias_proyectos,
     subir_guia,
-    download_guia
+    download_guia,
+    ver_flujo_proyecto,
+    borradores_proyecto,
+    proyect_data,
+    niveles_estado,
+    ver_flujo_proyecto_nivel2,
+    subir_primer_nivel,
+    id_doc,
+    subir_level,
+    publicar_doc,
+    proyectos_publicados
 };
