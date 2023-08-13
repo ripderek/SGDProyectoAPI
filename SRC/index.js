@@ -51,3 +51,30 @@ app.use('/api/flujo', authenticateToken, flujoRoutes);
 
 //Iniciar la API
 app.listen(PORT, () => console.log('SERVER ON PORT' + PORT));
+
+
+//Api editor
+const app1 = express();
+app1.use(express.json());
+
+const server = http.createServer(app1);
+const io = new Server(server);
+
+io.on('connection', (socket) => {
+  console.log('A user connected');
+
+  socket.on('send-changes', (delta) => {
+    console.log('Received changes:', delta);
+    // Emite el delta recibido a todos los clientes excepto al emisor
+    socket.broadcast.emit('receive-changes', delta);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('A user disconnected');
+  });
+});
+
+const PORT2 = 9000;
+server.listen(PORT2, () => {
+  console.log(`Server is running on port ${PORT2}`);
+});
