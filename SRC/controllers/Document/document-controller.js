@@ -1,46 +1,15 @@
 const Document = require('../../../schema/documentshema') 
-/*const getDocument = async (id) => {
-    if (!id) return null;
-
-    try {
-        const document = await Document.findById(id);
-
-        if (document) {
-            return document;
-        } else {
-            return await Document.create({ _id: id, data: "" });
-        }
-    } catch (error) {
-        // Manejo de errores aquí, por ejemplo: console.error(error);
-        throw error;
-    }
-};*/
 const getDocument = async (id) => {
-    if (!id) return { data: "" }; // Valor por defecto en caso de id no válido
+    if(id===null) return;
 
-    try {
-        const document = await Document.findById(id);
+    const document = await Document.findById(id);
 
-        if (document) {
-            return document;
-        } else {
-            return await Document.create({ _id: id, data: "" });
-        }
-    } catch (error) {
-        // Manejo de errores aquí, por ejemplo: console.error(error);
-        throw error;
-    }
+    if(document) return document;
+
+    return await Document.create({_id: id, data:""})
 };
-
 const updateDocument = async (id, data) => {
-    try {
-        const updatedDocument = await Document.findByIdAndUpdate(id, { data }, { new: true });
-
-        return updatedDocument;
-    } catch (error) {
-        // Manejo de errores aquí, por ejemplo: console.error(error);
-        throw error;
-    }
+    return await Document.findByIdAndUpdate(id, {data});
 };
 
 module.exports = {
