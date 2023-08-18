@@ -3,12 +3,14 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const cookieParser = require('cookie-parser');
 const http = require('http');
+
+
+=======
 const {Server} = require ('socket.io');
 const Connection = require ('./db_m.js');
 const { getDocument, updateDocument } = require("./controllers/Document/document-controller.js");
-
-
-
+======
+  
 //Este middleware se ejecuta antes de entrar a una ruta protegida, es decir, se necesita un token valido para acceder
 const { authenticateToken } = require('./middleware/authorization.js');
 
