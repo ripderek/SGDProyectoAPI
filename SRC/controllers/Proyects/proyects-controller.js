@@ -1,12 +1,15 @@
 //aqui van las funciones del modulo proyecto 
 const pool = require('../../db');
 const fs = require('fs');
-
 let ipFileServer = "../../uploads/proyectos/";
 const { extname } = require('path');
 const path = require('path');
+const puppeteer = require('puppeteer');
+var pdf = require("pdf-creator-node");
 
 
+//para editar el pdf i
+const { PDFDocument, rgb, StandardFonts } = require('pdf-lib');
 const crear_proyecto = async (req, res, next) => {
     try {
         const { p_titulo, p_id_area, p_id_categoria, p_prefijo_proyecto, p_subir_docs } = req.body;
@@ -18,7 +21,6 @@ const crear_proyecto = async (req, res, next) => {
         return res.status(404).json({ message: error.message });
     }
 }
-
 const editar_categoria = async (req, res, next) => {
     try {
         const { p_nombres, p_prefijo, p_descripcion, p_id_categoria } = req.body;
@@ -30,7 +32,6 @@ const editar_categoria = async (req, res, next) => {
         return res.status(404).json({ message: error.message });
     }
 }
-
 const subir_pdf = async (req, res, next) => {
     try {
         const { id } = req.body;
@@ -38,8 +39,182 @@ const subir_pdf = async (req, res, next) => {
         const { file } = req;
         const documento = `${ipFileServer}${file?.filename}`;
         console.log(descripcion);
+        //recolectar la informacion de ese proyecto para ponerlo como encabezado 
+        const dataProyect = await pool.query('select * from pro_encabezado($1)', [id]);
+        console.log(dataProyect.rows[0].r_titulo);
+        //return res.status(200).json(users.rows[0]);
+        //obtener la imagen de la empresa 
+        //const jpgUrl = 'https://pdf-lib.js.org/assets/cat_riding_unicorn.jpg'
+        const urlFotoEmpresa = path.join(__dirname, "../" + dataProyect.rows[0].r_url_foto_empresa)
+        //const pngImageBytes = await fetch(urlFotoEmpresa).then((res) => res.arrayBuffer())
+        const pngImageBytesBuffer = await fs.readFileSync(urlFotoEmpresa);
+        const pngImageBytes = pngImageBytesBuffer.buffer;
+        //aqui editar el pdf para ponerle el encabezado de pagina 
+        //prueba de como se modifica un documento pdf 
+        //documento es la ruta del documento
+        console.log(documento);
+        //../../uploads/proyectos/PrototipoT-UTEQ-0090-1691544023165.pdf
+        const urlArchivos = path.join(__dirname, "../" + documento)
+        const buffer = await fs.readFileSync(urlArchivos);
+        const pdfDoc = await PDFDocument.load(buffer)
+        const pngImage = await pdfDoc.embedPng(pngImageBytes)
+        const pngDims = pngImage.scale(0.1)
+        //const pages = pdfDoc.getPages()
+        console.log("Paguinas del doc" + pdfDoc.getPages().length);
+        //desde aqui es para editar el documento pdf xd 
+        const pages = pdfDoc.getPages();
+        // const { width, height } = pdfDoc.getSize();
+        let fontsize = 10
+        //rectangulo xd 
+        const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+        //pages[0].drawText('PDF MODIFICADO BY RIP DEREK para el encabezado')
+        for (i = 0; i < pdfDoc.getPages().length; i++) {
+            //const pages = pdfDoc.getPages();
+            //obtener la paguina y su tamanao
+            const pageActually = pages[i]
+            const { width, height } = pageActually.getSize()
+            //rectagulo princiapl 
+            pageActually.drawRectangle({
+                x: 12,
+                y: height / 2 + 320,
+                width: width - 36,
+                height: 80,
+                color: rgb(1, 1, 1),
+                borderWidth: 1.5,
+            })
+            //rectagunlo para la foto de la empresa xd 
+            pageActually.drawRectangle({
+                x: 12,
+                y: height / 2 + 300,
+                width: 100,
+                height: 100,
+                color: rgb(1, 1, 1),
+                borderWidth: 1.5,
+            })
+            //primer fila
+            pageActually.drawRectangle({
+                x: 113,
+                y: height / 2 + 380,
+                width: width - 137,
+                height: 20,
+                color: rgb(1, 1, 1),
+                borderWidth: 1.5,
+            })
+            //segunda fila
+            pageActually.drawRectangle({
+                x: 113,
+                y: height / 2 + 360,
+                width: width - 137,
+                height: 20,
+                color: rgb(1, 1, 1),
+                borderWidth: 1.5,
+            })
+            //tercer fila 
+            pageActually.drawRectangle({
+                x: 113,
+                y: height / 2 + 340,
+                width: width - 137,
+                height: 20,
+                color: rgb(1, 1, 1),
+                borderWidth: 1.5,
+            })
+            //cuarta fila 
+            pageActually.drawRectangle({
+                x: 113,
+                y: height / 2 + 300,
+                width: width - 137,
+                height: 20,
+                color: rgb(1, 1, 1),
+                borderWidth: 1.5,
+            })
+            //aqui es donde tengo que crear la tabla con el encabezado y ponerla en el nuevo doc 
+            //titulo del sistema
+            pageActually.drawText("Sistema de Gestión de la Calidad de la UTEQ", {
+                x: 117,
+                y: height / 2 + 385,
+                size: fontsize,
+                font: font,
+            })
+            //titulo del proyecto
+            pageActually.drawText(dataProyect.rows[0].r_titulo, {
+                x: 117,
+                y: height / 2 + 365,
+                size: fontsize,
 
-        const users = await pool.query('call documento_proyecto($1,$2,$3)', [documento, id, descripcion]);
+            })
+            //codigo del proyecto
+            pageActually.drawText("Codigo: ", {
+                x: 117,
+                y: height / 2 + 345,
+                size: fontsize,
+                font: font,
+            })
+            pageActually.drawText(dataProyect.rows[0].r_codigo, {
+                x: 165,
+                y: height / 2 + 345,
+                size: fontsize
+            })
+            //area responsable
+            pageActually.drawText("Responsable: ", {
+                x: 117,
+                y: height / 2 + 325,
+                size: fontsize,
+                font: font,
+            })
+            pageActually.drawText(dataProyect.rows[0].r_area_responsable, {
+                x: 185,
+                y: height / 2 + 325,
+                size: fontsize
+            })
+            //version del proyecto: 
+            pageActually.drawText("Version: ", {
+                x: 117,
+                y: height / 2 + 305,
+                size: fontsize,
+                font: font,
+            })
+            //fecha de publicacion
+            pageActually.drawText("Fecha: ", {
+                x: 250,
+                y: height / 2 + 305,
+                size: fontsize,
+                font: font,
+            })
+            //Numero de pagina
+            pageActually.drawText("Pagina: ", {
+                x: 400,
+                y: height / 2 + 305,
+                size: fontsize,
+                font: font,
+            })
+            //dibujar la foto  de la empresa
+            pageActually.drawImage(pngImage, {
+                x: 22,
+                y: height / 2 + 302,
+                width: pngDims.width,
+                height: pngDims.height,
+            })
+        }
+        //hasta aqui
+        //el resto es para guardar el pdf xd
+        //const pdfBytes = await pdfDoc.save()
+        //con este se guarda el archivo
+        //fs.writeFileSync("./output1.pdf", await pdfDoc.save());
+        console.log("Nombre del archivo");
+        const fileExtension = extname(file.originalname);
+        //console.log(fileExtension);
+        //console.log(file.filename.split(fileExtension)[0]);
+        const fileName = file.filename.split(fileExtension)[0] + "-Cabezera";
+        const documento_editado = `${fileName}${fileExtension}`;
+        //cb(null, `${fileName}-${Date.now()}${fileExtension}`);
+        console.log(documento_editado);
+        //al guardarlo ponerle un -cabezera al nombre del documento para guardarlo xd
+        //`${ipFileServer}${documento_editado?documento_editado}`
+        const rutaCabezera = `${ipFileServer}${documento_editado}`
+        console.log("Ruta a enviar a la bd" + rutaCabezera);
+        fs.writeFileSync("./uploads/proyectos/" + documento_editado, await pdfDoc.save());
+        //almacenaren la base de datos el nuevo documento xd 
+        const users = await pool.query('call documento_proyecto($1,$2,$3)', [rutaCabezera, id, descripcion]);
         console.log(users);
         return res.status(200).json({ message: "se subio el archivo" });
     } catch (error) {
@@ -47,9 +222,6 @@ const subir_pdf = async (req, res, next) => {
         return res.status(404).json({ message: error.message });
     }
 }
-
-
-
 const crear_categoria = async (req, res, next) => {
     try {
         const { p_nombre, p_prefijo, p_descripcion } = req.body;
@@ -91,7 +263,6 @@ const all_categorias = async (req, res, next) => {
         return res.status(404).json({ message: error.message });
     }
 }
-
 const list_categorias = async (req, res, next) => {
     try {
         const users = await pool.query('select * from Lis_categorias()');
@@ -101,7 +272,6 @@ const list_categorias = async (req, res, next) => {
         return res.status(404).json({ message: error.message });
     }
 }
-
 const roles_proyecto = async (req, res, next) => {
     try {
         const { p_id_user, p_id_proyect } = req.body;
@@ -112,7 +282,6 @@ const roles_proyecto = async (req, res, next) => {
         return res.status(404).json({ message: error.message });
     }
 }
-
 const documentos_proyectos = async (req, res, next) => {
     try {
         const { id } = req.params;
@@ -123,7 +292,6 @@ const documentos_proyectos = async (req, res, next) => {
         return res.status(404).json({ message: error.message });
     }
 }
-
 const ver_pdf = async (req, res) => {
     try {
         const { id } = req.params;
@@ -139,7 +307,36 @@ const ver_pdf = async (req, res) => {
 
     }
 }
+//ver el pdf modifcado con los otros documentos anadidos 
+const ver_pdf_2 = async (req, res) => {
+    try {
+        const { id } = req.params;
 
+        const users = await pool.query('select * from ver_docs_x_id_2($1)', [id]);
+        const urlArchivos = path.join(__dirname, "../" + users.rows[0].d_url)
+
+        var data = fs.readFileSync(urlArchivos);
+        res.contentType("application/pdf");
+        res.send(data);
+    } catch (error) {
+        return res.status(404).json({ message: error.message });
+
+    }
+}
+//Ver pdf solo enviar la URL del doc
+const ver_pdf_url = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const users = await pool.query('select * from Ver_URL_Extra($1)', [id]);
+        const urlArchivos = path.join(__dirname, "../" + users.rows[0].p_url_doc)
+        var data = fs.readFileSync(urlArchivos);
+        res.contentType("application/pdf");
+        res.send(data);
+    } catch (error) {
+        return res.status(404).json({ message: error.message });
+
+    }
+}
 const guias_proyectos = async (req, res, next) => {
     try {
         const { id } = req.params;
@@ -150,41 +347,29 @@ const guias_proyectos = async (req, res, next) => {
         return res.status(404).json({ message: error.message });
     }
 }
-
 //Nuevo agregado desde la pc de Herrera
 let ipFileServerGuia = "../../uploads/Guias/";
-
 const subir_guia = async (req, res, next) => {
     try {
         const { id } = req.body;
-
         const { file } = req;
         const documento = `${ipFileServerGuia}${file?.filename}`;
-
         //let ext = path.extname(file);
-
         const { descripcion } = req.body;
         console.log(documento);
-
-
         const extension = extname(file.originalname);
         const ext = file.originalname.split(extension)[1];
-
         console.log(extension);
         console.log(ext);
         console.log("aqui se envia el archivo");
-        // console.log(id,documento,ext.substr(1),descripcion);
-
         const users = await pool.query('call subir_guia($1,$2,$3,$4)', [documento, id, extension, descripcion]);
         console.log(users);
-
         return res.status(200).json({ message: "se subio el archivo" });
     } catch (error) {
         console.log(error);
         return res.status(404).json({ message: error.message });
     }
 }
-
 const download_guia = async (req, res) => {
     console.log("descargar guia");
     try {
@@ -203,7 +388,6 @@ const download_guia = async (req, res) => {
         return res.status(404).json({ message: error.message });
     }
 }
-
 const ver_flujo_proyecto = async (req, res, next) => {
     try {
         const { id } = req.params;
@@ -214,7 +398,6 @@ const ver_flujo_proyecto = async (req, res, next) => {
         return res.status(404).json({ message: error.message });
     }
 }
-
 const borradores_proyecto = async (req, res, next) => {
     try {
         const { id } = req.params;
@@ -225,7 +408,6 @@ const borradores_proyecto = async (req, res, next) => {
         return res.status(404).json({ message: error.message });
     }
 }
-
 const proyect_data = async (req, res, next) => {
     try {
         const { id } = req.params;
@@ -236,7 +418,6 @@ const proyect_data = async (req, res, next) => {
         return res.status(404).json({ message: error.message });
     }
 }
-
 const niveles_estado = async (req, res, next) => {
     try {
         const { id } = req.params;
@@ -247,7 +428,6 @@ const niveles_estado = async (req, res, next) => {
         return res.status(404).json({ message: error.message });
     }
 }
-
 const ver_flujo_proyecto_nivel2 = async (req, res, next) => {
     try {
         const { id } = req.params;
@@ -258,7 +438,6 @@ const ver_flujo_proyecto_nivel2 = async (req, res, next) => {
         return res.status(404).json({ message: error.message });
     }
 }
-
 const subir_primer_nivel = async (req, res, next) => {
     try {
         const { list_niveles } = req.body;
@@ -269,7 +448,6 @@ const subir_primer_nivel = async (req, res, next) => {
         return res.status(404).json({ message: error.message });
     }
 }
-
 const id_doc = async (req, res, next) => {
     try {
         const { id } = req.params;
@@ -280,19 +458,65 @@ const id_doc = async (req, res, next) => {
         return res.status(404).json({ message: error.message });
     }
 }
-
 const subir_level = async (req, res, next) => {
     try {
         const { id } = req.params;
-        const users = await pool.query('call subir_niveles($1)', [id]);
+        //primero necesito obtener el primer pdf que seria el documento actual del proyecto de la columna 'url2'
+        //devuelve un registro
+        const documento_subido = await pool.query('select * from ver_doc_modificado($1)', [id]);
+        //segundo necesito todos los documentos extras con esta en true para juntarlo 
+        //devuelve varios
+        const documentos_extras = await pool.query('select * from Ver_documentos_extras($1)', [id]);
+        //antes de empezar a unir los pdf se debe preguntar si existen o no documentos apra ajuntar 
+        //de no existir simplemente se omite este paso 
+        let nuevaURL = '';
+        if (documentos_extras.rows.length != 0) {
+            console.log("El proyecto tiene documentos extras" + id);
+            //como tiene documentos extras tengo que recorrerlos 
+            //aqui tiene que crearse y copiarse primero todas las paguinas del primer documento (url_modificado)
+            console.log("Documento original");
+            console.log(documento_subido.rows[0].p_url_doc);
+            //conversiona bytes del documento base 
+            //const urlDocBase = path.join(__dirname, "../" + documento_subido.rows[0].p_url_doc)
+            // const DocBaseBuffer = await fs.readFileSync(urlDocBase);
+            //const DocBytes = await PDFDocument.load(DocBaseBuffer)
+            const VectorConDocumentos = [];
+            VectorConDocumentos.push(documento_subido.rows[0].p_url_doc);
+            for (var i = 0; i < documentos_extras.rows.length; i++) {
+                //  Agregar elementos al vector
+                VectorConDocumentos.push(documentos_extras.rows[i].r_url_doc);
+            }
+            //console.log("URLDOCUMENTOS: " + VectorConDocumentos);
+            //las url de los documeton estan en el vector
+            const pdfDoc = await PDFDocument.create();
+            for (const pdfBytes of VectorConDocumentos) {
+                //primero obtener el buffer del documento xd 
+                const urlDocBase = path.join(__dirname, "../" + pdfBytes)
+                const DocBaseBuffer = await fs.readFileSync(urlDocBase);
+                const DocBytes = await PDFDocument.load(DocBaseBuffer)
+                const copiedPages = await pdfDoc.copyPages(DocBytes, DocBytes.getPageIndices());
+                copiedPages.forEach((page) => {
+                    pdfDoc.addPage(page);
+                });
+            }
+            //guardar el pdf 
+            var nuevaURL2 = "./uploads/proyectos/" + 'documentomodificado' + Date.now() + '.pdf';
+            fs.writeFileSync(nuevaURL2, await pdfDoc.save());
+            //../.
+            nuevaURL = '../.' + nuevaURL2;
+        }
+        else {
+            console.log('El proyecto no tiene documetos extras' + id);
+            nuevaURL = documento_subido.rows[0].p_url_doc;
+        }
+        const users = await pool.query('call subir_niveles($1,$2)', [id, nuevaURL]);
         console.log(users);
         return res.status(200).json(users.rows[0]);
     } catch (error) {
+        console.log(error);
         return res.status(404).json({ message: error.message });
     }
 }
-
-
 const publicar_doc = async (req, res, next) => {
     try {
         const { id } = req.params;
@@ -303,7 +527,6 @@ const publicar_doc = async (req, res, next) => {
         return res.status(404).json({ message: error.message });
     }
 }
-
 const proyectos_publicados = async (req, res, next) => {
     try {
         const users = await pool.query('select * from ver_proyectos_publicados()');
@@ -313,7 +536,570 @@ const proyectos_publicados = async (req, res, next) => {
         return res.status(404).json({ message: error.message });
     }
 }
+const deshabilitar_flujo = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        console.log("Aqui se envia a cambiar");
+        const users = await pool.query('call cambiar_estado_flujo($1)', [id]);
+        console.log(users);
+        return res.status(200).json({ message: "Se deshalibito el flujo" });
+    } catch (error) {
+        return res.status(404).json({ message: error.message });
+    }
+}
+//funcion para rechazar el proyecto en cualquier nivel que se encuentre ostia puta xd 
+const rechazar_proyecto = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const { descripcionp } = req.body
+        const users = await pool.query('call rechazar_proyecto($1,$2)', [id, descripcionp]);
+        console.log(users);
+        return res.status(200).json(users.rows[0]);
+    } catch (error) {
+        console.log(error);
+        return res.status(404).json({ message: error.message });
+    }
+}
+//funcion para ver el historial de un proyecto 
+const historial_proyecto = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const users = await pool.query('select * from ver_historial_proyecto($1)', [id]);
+        console.log(users);
+        return res.status(200).json(users.rows);
+    } catch (error) {
+        return res.status(404).json({ message: error.message });
+    }
+}
+//funcion para ver el flujo rechazado xd  
+const ver_flujo_rechazado = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const users = await pool.query('select * from ver_flujo_rechazado($1)', [id]);
+        console.log(users);
+        return res.status(200).json(users.rows);
+    } catch (error) {
+        return res.status(404).json({ message: error.message });
+    }
+}
+//funcion para ver el flujo que se creo desde el historial del proyecto 
+const ver_flujo_historial = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const users = await pool.query('select * from flujo_Historial($1)', [id]);
+        console.log(users);
+        return res.status(200).json(users.rows);
+    } catch (error) {
+        return res.status(404).json({ message: error.message });
+    }
+}
+//funcion para ver los documentos extras que ha subido un nivel en un proyecto
+const ver_documentos_extras = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const users = await pool.query('select * from Ver_documentos_extras($1)', [id]);
+        //console.log(users);
+        return res.status(200).json(users.rows);
+    } catch (error) {
+        return res.status(404).json({ message: error.message });
+    }
+}
+//funcion para subir los documentos extras segun el nivel 
+const subir_pdf_extra = async (req, res, next) => {
+    try {
+        const { id } = req.body;
+        const { descripcion } = req.body;
+        const { file } = req;
+        const documento = `${ipFileServer}${file?.filename}`;
+        console.log(descripcion);
+        //recolectar la informacion de ese proyecto para ponerlo como encabezado 
+        const dataProyect = await pool.query('select * from pro_encabezado($1)', [id]);
+        console.log(dataProyect.rows[0].r_titulo);
+        //return res.status(200).json(users.rows[0]);
+        //obtener la imagen de la empresa 
+        //const jpgUrl = 'https://pdf-lib.js.org/assets/cat_riding_unicorn.jpg'
+        const urlFotoEmpresa = path.join(__dirname, "../" + dataProyect.rows[0].r_url_foto_empresa)
+        //const pngImageBytes = await fetch(urlFotoEmpresa).then((res) => res.arrayBuffer())
+        const pngImageBytesBuffer = await fs.readFileSync(urlFotoEmpresa);
+        const pngImageBytes = pngImageBytesBuffer.buffer;
+        //aqui editar el pdf para ponerle el encabezado de pagina 
+        //prueba de como se modifica un documento pdf 
+        //documento es la ruta del documento
+        console.log(documento);
+        //../../uploads/proyectos/PrototipoT-UTEQ-0090-1691544023165.pdf
+        const urlArchivos = path.join(__dirname, "../" + documento)
+        const buffer = await fs.readFileSync(urlArchivos);
+        const pdfDoc = await PDFDocument.load(buffer)
+        const pngImage = await pdfDoc.embedPng(pngImageBytes)
+        const pngDims = pngImage.scale(0.1)
+        //const pages = pdfDoc.getPages()
+        console.log("Paguinas del doc" + pdfDoc.getPages().length);
+        //desde aqui es para editar el documento pdf xd 
+        const pages = pdfDoc.getPages();
+        // const { width, height } = pdfDoc.getSize();
+        let fontsize = 10
+        //rectangulo xd 
+        const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+        //pages[0].drawText('PDF MODIFICADO BY RIP DEREK para el encabezado')
+        for (i = 0; i < pdfDoc.getPages().length; i++) {
+            //const pages = pdfDoc.getPages();
+            //obtener la paguina y su tamanao
+            const pageActually = pages[i]
+            const { width, height } = pageActually.getSize()
+            //rectagulo princiapl 
+            pageActually.drawRectangle({
+                x: 12,
+                y: height / 2 + 320,
+                width: width - 36,
+                height: 80,
+                color: rgb(1, 1, 1),
+                borderWidth: 1.5,
+            })
+            //rectagunlo para la foto de la empresa xd 
+            pageActually.drawRectangle({
+                x: 12,
+                y: height / 2 + 300,
+                width: 100,
+                height: 100,
+                color: rgb(1, 1, 1),
+                borderWidth: 1.5,
+            })
+            //primer fila
+            pageActually.drawRectangle({
+                x: 113,
+                y: height / 2 + 380,
+                width: width - 137,
+                height: 20,
+                color: rgb(1, 1, 1),
+                borderWidth: 1.5,
+            })
+            //segunda fila
+            pageActually.drawRectangle({
+                x: 113,
+                y: height / 2 + 360,
+                width: width - 137,
+                height: 20,
+                color: rgb(1, 1, 1),
+                borderWidth: 1.5,
+            })
+            //tercer fila 
+            pageActually.drawRectangle({
+                x: 113,
+                y: height / 2 + 340,
+                width: width - 137,
+                height: 20,
+                color: rgb(1, 1, 1),
+                borderWidth: 1.5,
+            })
+            //cuarta fila 
+            pageActually.drawRectangle({
+                x: 113,
+                y: height / 2 + 300,
+                width: width - 137,
+                height: 20,
+                color: rgb(1, 1, 1),
+                borderWidth: 1.5,
+            })
+            //aqui es donde tengo que crear la tabla con el encabezado y ponerla en el nuevo doc 
+            //titulo del sistema
+            pageActually.drawText("Sistema de Gestión de la Calidad de la UTEQ", {
+                x: 117,
+                y: height / 2 + 385,
+                size: fontsize,
+                font: font,
+            })
+            //titulo del proyecto
+            pageActually.drawText(dataProyect.rows[0].r_titulo, {
+                x: 117,
+                y: height / 2 + 365,
+                size: fontsize,
 
+            })
+            //codigo del proyecto
+            pageActually.drawText("Codigo: ", {
+                x: 117,
+                y: height / 2 + 345,
+                size: fontsize,
+                font: font,
+            })
+            pageActually.drawText(dataProyect.rows[0].r_codigo, {
+                x: 165,
+                y: height / 2 + 345,
+                size: fontsize
+            })
+            //area responsable
+            pageActually.drawText("Responsable: ", {
+                x: 117,
+                y: height / 2 + 325,
+                size: fontsize,
+                font: font,
+            })
+            pageActually.drawText(dataProyect.rows[0].r_area_responsable, {
+                x: 185,
+                y: height / 2 + 325,
+                size: fontsize
+            })
+            //version del proyecto: 
+            pageActually.drawText("Version: ", {
+                x: 117,
+                y: height / 2 + 305,
+                size: fontsize,
+                font: font,
+            })
+            //fecha de publicacion
+            pageActually.drawText("Fecha: ", {
+                x: 250,
+                y: height / 2 + 305,
+                size: fontsize,
+                font: font,
+            })
+            //Numero de pagina
+            pageActually.drawText("Pagina: ", {
+                x: 400,
+                y: height / 2 + 305,
+                size: fontsize,
+                font: font,
+            })
+            //dibujar la foto  de la empresa
+            pageActually.drawImage(pngImage, {
+                x: 22,
+                y: height / 2 + 302,
+                width: pngDims.width,
+                height: pngDims.height,
+            })
+        }
+        //hasta aqui
+        //el resto es para guardar el pdf xd
+        //const pdfBytes = await pdfDoc.save()
+        //con este se guarda el archivo
+        //fs.writeFileSync("./output1.pdf", await pdfDoc.save());
+        console.log("Nombre del archivo");
+        const fileExtension = extname(file.originalname);
+        //console.log(fileExtension);
+        //console.log(file.filename.split(fileExtension)[0]);
+        const fileName = file.filename.split(fileExtension)[0] + "-Cabezera";
+        const documento_editado = `${fileName}${fileExtension}`;
+        //cb(null, `${fileName}-${Date.now()}${fileExtension}`);
+        console.log(documento_editado);
+        //al guardarlo ponerle un -cabezera al nombre del documento para guardarlo xd
+        //`${ipFileServer}${documento_editado?documento_editado}`
+        const rutaCabezera = `${ipFileServer}${documento_editado}`
+        console.log("Ruta a enviar a la bd" + rutaCabezera);
+        fs.writeFileSync("./uploads/proyectos/" + documento_editado, await pdfDoc.save());
+        console.log("datos");
+        console.log("id: " + id);
+        console.log("descripcion" + descripcion);
+        //almacenaren la base de datos el nuevo documento xd 
+        const users = await pool.query('call insertar_documentos_extras($1,$2,$3)', [rutaCabezera, id, descripcion]);
+        console.log(users);
+        return res.status(200).json({ message: "se subio el archivo" });
+    } catch (error) {
+        console.log(error);
+        return res.status(404).json({ message: error.message });
+    }
+}
+//combinar pdf sin guardar en la base de datos 
+const combinar_pdfs = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        //primero necesito obtener el primer pdf que seria el documento actual del proyecto de la columna 'url2'
+        //devuelve un registro
+        const documento_subido = await pool.query('select * from ver_doc_modificado($1)', [id]);
+        //segundo necesito todos los documentos extras con esta en true para juntarlo 
+        //devuelve varios
+        const documentos_extras = await pool.query('select * from Ver_documentos_extras($1)', [id]);
+        //antes de empezar a unir los pdf se debe preguntar si existen o no documentos apra ajuntar 
+        //de no existir simplemente se omite este paso 
+        if (documentos_extras.rows.length != 0) {
+            console.log("El proyecto tiene documentos extras" + id);
+            //como tiene documentos extras tengo que recorrerlos 
+            //aqui tiene que crearse y copiarse primero todas las paguinas del primer documento (url_modificado)
+            console.log("Documento original");
+            console.log(documento_subido.rows[0].p_url_doc);
+            //conversiona bytes del documento base 
+            //const urlDocBase = path.join(__dirname, "../" + documento_subido.rows[0].p_url_doc)
+            // const DocBaseBuffer = await fs.readFileSync(urlDocBase);
+            //const DocBytes = await PDFDocument.load(DocBaseBuffer)
+            const VectorConDocumentos = [];
+            VectorConDocumentos.push(documento_subido.rows[0].p_url_doc);
+            for (var i = 0; i < documentos_extras.rows.length; i++) {
+                //  Agregar elementos al vector
+                VectorConDocumentos.push(documentos_extras.rows[i].r_url_doc);
+            }
+            //console.log("URLDOCUMENTOS: " + VectorConDocumentos);
+            //las url de los documeton estan en el vector
+            const pdfDoc = await PDFDocument.create();
+            for (const pdfBytes of VectorConDocumentos) {
+                //primero obtener el buffer del documento xd 
+                const urlDocBase = path.join(__dirname, "../" + pdfBytes)
+                const DocBaseBuffer = await fs.readFileSync(urlDocBase);
+                const DocBytes = await PDFDocument.load(DocBaseBuffer)
+                const copiedPages = await pdfDoc.copyPages(DocBytes, DocBytes.getPageIndices());
+                copiedPages.forEach((page) => {
+                    pdfDoc.addPage(page);
+                });
+            }
+            //guardar el pdf 
+            const nuevaURL = "./uploads/proyectos/" + documento_subido.rows[0].p_titulo + Date.now() + '.pdf';
+            fs.writeFileSync(nuevaURL, await pdfDoc.save());
+        }
+        else { console.log('El proyecto no tiene documetos extras' + id); }
+        return res.status(200).json({ message: "Se combinaron los pdf" });
+    } catch (error) {
+        console.log(error);
+        return res.status(404).json({ message: error.message });
+    }
+}
+//funcion que retorne los participantes actuales de un proyecto 
+const participantes_actuales_proyecto = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const { id2 } = req.params;
+        const users = await pool.query('select * from Participantes_Actuales_Proyecto($1,$2)', [id, id2]);
+        return res.status(200).json(users.rows);
+    } catch (error) {
+        return res.status(404).json({ message: error.message });
+    }
+}
+//funcion que retorne los usuarios que no estan dentro del proyecto de un area para agregarlos xdxd skere 
+const participantes_sin_proyectos = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const { id2 } = req.params;
+        const users = await pool.query('select * from Lista_Participantes_Proyecto($1,$2)', [id, id2]);
+        console.log(users);
+        return res.status(200).json(users.rows);
+    } catch (error) {
+        console.log(error);
+        return res.status(404).json({ message: error.message });
+    }
+}
+//funcion para agregar un usuario al proyecto 
+const agregar_usuario_proyecto = async (req, res, next) => {
+    try {
+        const { p_proyecto_id, p_id_relacion, p_id_rol } = req.body;
+        const users = await pool.query('call agregar_usuario_proyecto($1,$2,$3)', [p_proyecto_id, p_id_relacion, p_id_rol]);
+        console.log(users);
+        return res.status(200).json({ message: "Se añadió al usuario" });
+    } catch (error) {
+        return res.status(404).json({ message: error.message });
+    }
+}
+//funcion para expulsar usuario de un proyecto 
+const expulsar_usuario_proyecto = async (req, res, next) => {
+    try {
+        const { p_proyecto_id, p_id_relacion, p_id_rol } = req.body;
+        const users = await pool.query('call expulsar_usuario_proyecto($1,$2)', [p_proyecto_id, p_id_relacion]);
+        console.log(users);
+        return res.status(200).json({ message: "Se expulso al usuario" });
+    } catch (error) {
+        console.log(error);
+        return res.status(404).json({ message: error.message });
+    }
+}
+//generar la caratula prueba 
+
+const generar_caratula = async (req, res, next) => {
+    try {
+        //primero pedir el titulo del proyecto mediantes el id del params 
+
+        const { id } = req.params;
+        const users = await pool.query('select * from  titulo_proyecto_pdf($1)', [id]);
+
+        const tituloDelDocumento = users.rows[0].r_titulo_proyecto;
+
+        //esto sive para generar la caratula 
+        (async () => {
+            //const urlFotoEmpresa = path.join(__dirname, "../" + dataProyect.rows[0].r_url_foto_empresa)
+            //../../uploads/perfiles/logo_empresa-1690769537460.png
+            const urlCaratula = path.join(__dirname, "../" + "../../uploads/Galeria/caratula.jpg");
+            const browser = await puppeteer.launch();
+            const page = await browser.newPage();
+            const chunks = fs.readFileSync(urlCaratula).toString('base64');
+            const content = `
+              <!DOCTYPE html>
+              <html>
+              <head> 
+              <style>
+              body {
+                background-image: url("data:image/jpeg;base64,${chunks}");
+                background-size: cover;
+                width: 21cm;
+                height: 29.7cm;
+                padding: 15mm;
+                margin: 0;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+              }
+              h1 {
+                margin-top: 80px; 
+              }
+            </style>   
+              </head>
+              <body>
+              <div>
+                <h1>${tituloDelDocumento}</h1>
+                </div>
+              </body>
+              </html>
+            `;
+            //uploads\Galeria\caratula.jpg
+            await page.setContent(content);
+            await page.pdf({ path: 'output.pdf', format: 'A4', printBackground: true });
+
+            await browser.close();
+        })();
+        //hasta aqui genera la caratula
+        return res.status(200).json({ message: "Se genero la caratula" });
+    } catch (error) {
+        console.log(error);
+        return res.status(404).json({ message: error.message });
+    }
+}
+//generar pdf con la lista de los participantes del proyecto 
+const generar_lista_usuarios = async (req, res, next) => {
+    try {
+        //obtener el id del proyecto para hacer la consulta de la data para generar los pdf 
+        const { id } = req.params;
+        //primero generar la caratula y guardar la url en un variable para luego juntar todos los documentos 
+        const titulo = await pool.query('select * from  titulo_proyecto_pdf($1)', [id]);
+
+        const tituloDelDocumento = titulo.rows[0].r_titulo_proyecto;
+        //ruta donde se guardara la caratula        documento_subido.rows[0].p_titulo + Date.now()
+        const rutaCaratula = "./uploads/proyectos/" + 'Caratula' + '.pdf';
+        //esto sive para generar la caratula 
+        (async () => {
+            //const urlFotoEmpresa = path.join(__dirname, "../" + dataProyect.rows[0].r_url_foto_empresa)
+            //../../uploads/perfiles/logo_empresa-1690769537460.png
+            //esta url debe ser obtenida desde la base de datos solo reemplazar despues del +
+            const urlCaratula = path.join(__dirname, "../" + "../../uploads/Galeria/caratula.jpg");
+            const browser = await puppeteer.launch();
+            const page = await browser.newPage();
+            const chunks = fs.readFileSync(urlCaratula).toString('base64');
+
+
+            const content = `
+              <!DOCTYPE html>
+              <html>
+              <head> 
+              <style>
+              body {
+                background-image: url("data:image/jpeg;base64,${chunks}");
+                background-size: cover;
+                width: 21cm;
+                height: 29.7cm;
+                padding: 15mm;
+                margin: 0;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+              }
+              h1 {
+                margin-top: 80px; 
+              }
+            </style>   
+              </head>
+              <body>
+              <div>
+                <h1>${tituloDelDocumento}</h1>
+                </div>
+              </body>
+              </html>
+            `;
+            //uploads\Galeria\caratula.jpg
+            await page.setContent(content);
+            await page.pdf({ path: rutaCaratula, format: 'A4', printBackground: true });
+
+            await browser.close();
+        })();
+        //hasta aqui genera la caratula
+
+        //crear pdf con la lista de los usuarios para guardar la url en una variable y juntar todos los documentos
+        //lista con los usuarios que desarrollaron el proyecto 
+        const usuarios_elaboracion = await pool.query('select * from listado_usuarios_elaboracion($1)', [id]);
+        const usuarios_revision = await pool.query('select * from listado_usuarios_revision($1)', [id]);
+        const usuarios_publicacion = await pool.query('select * from listado_usuarios_publicacion($1)', [id]);
+        const users = await pool.query('select * from  titulo_proyecto_pdf($1)', [id]);
+        const datos_empresa = await pool.query('select * from  encabezado_empresa_pdf()');
+        //const tituloDelDocumento = users.rows[0].r_titulo_proyecto;
+        const urlFotoEmpresa = path.join(__dirname, "../" + datos_empresa.rows[0].r_url_logo)
+        console.log(urlFotoEmpresa);
+        const chunks = fs.readFileSync(urlFotoEmpresa).toString('base64');
+        var html = fs.readFileSync("SRC/controllers/Proyects/caratula.html", "utf8");
+        console.log("file://C:/Users/casti/OneDrive/Escritorio/BackendSGD/uploads/perfiles/logo_empresa-1690769537460.png");
+        //ruta donde se guardara el listado            documento_subido.rows[0].p_titulo + Date.now()
+        const rutaListado = "./uploads/proyectos/" + 'Listado' + '.pdf';
+        var options = {
+            format: "A4",
+            orientation: "portrait",
+            border: "10mm",
+            localUrlAccess: true,
+            footer: {
+                height: "28mm",
+                contents: {
+                    first: 'Cover page',
+                    2: 'Second page', // Any page number is working. 1-based index
+                    default: '<span style="color: #444;">{{page}}</span>/<span>{{pages}}</span>', // fallback value
+                    last: 'Last Page'
+                }
+            }
+        };
+        var document = {
+            html: html,
+            data: {
+                users: usuarios_elaboracion.rows,
+                users2: usuarios_revision.rows,
+                users3: usuarios_publicacion.rows,
+                titulo: tituloDelDocumento,
+                chunks: chunks,
+                Empresa: datos_empresa.rows[0].r_nombre_empresa
+            },
+            path: rutaListado,
+            type: "",
+        };
+        pdf
+            .create(document, options)
+            .then((res) => {
+                console.log(res);
+            })
+            .catch((error) => {
+                console.error(error);
+            });
+        //ahora juntar la caratula, la lista de usuarios y el documento modificado del proyecto para hacerlo uno solo xd 
+        //primero obtener el pdf modificado de la base de datos 
+        const documento_subido = await pool.query('select * from ver_doc_modificado($1)', [id]);
+        //crear un vector que almacene todas las rutas de los documentos que se quieren unir 
+        const VectorConDocumentos = [];
+        //los demas documentos que se desean subir 
+        //            nuevaURL = '../.' + nuevaURL2;
+        VectorConDocumentos.push('../.' + rutaCaratula);
+        VectorConDocumentos.push('../.' + rutaListado);
+        VectorConDocumentos.push(documento_subido.rows[0].p_url_doc);
+        //ahora unir los documentos en un solo pdf
+        const pdfDoc = await PDFDocument.create();
+        for (const pdfBytes of VectorConDocumentos) {
+            //primero obtener el buffer del documento xd 
+            const urlDocBase = path.join(__dirname, "../" + pdfBytes)
+            const DocBaseBuffer = await fs.readFileSync(urlDocBase);
+            const DocBytes = await PDFDocument.load(DocBaseBuffer)
+            const copiedPages = await pdfDoc.copyPages(DocBytes, DocBytes.getPageIndices());
+            copiedPages.forEach((page) => {
+                pdfDoc.addPage(page);
+            });
+        }
+        //guardar el pdf 
+        //cuando se envie a la base de datos se tiene que enviar con '../.' + URL 
+        const nuevaURL = 'nuevodoc.pdf';
+        fs.writeFileSync(nuevaURL, await pdfDoc.save());
+        return res.status(200).json({ message: "Se preparo el documento" });
+    } catch (error) {
+        console.log(error);
+        return res.status(404).json({ message: error.message });
+    }
+}
 
 module.exports = {
     crear_proyecto,
@@ -339,5 +1125,21 @@ module.exports = {
     id_doc,
     subir_level,
     publicar_doc,
-    proyectos_publicados
+    proyectos_publicados,
+    deshabilitar_flujo,
+    rechazar_proyecto,
+    historial_proyecto,
+    ver_flujo_rechazado,
+    ver_flujo_historial,
+    ver_documentos_extras,
+    ver_pdf_url,
+    subir_pdf_extra,
+    combinar_pdfs,
+    ver_pdf_2,
+    participantes_actuales_proyecto,
+    participantes_sin_proyectos,
+    agregar_usuario_proyecto,
+    expulsar_usuario_proyecto,
+    generar_caratula,
+    generar_lista_usuarios
 };
