@@ -7,7 +7,8 @@ const { Server } = require('socket.io');
 
 
 const Connection = require ('./db_m.js');
-const { getDocument, updateDocument } = require("./controllers/Document/document-controller.js");
+const { saveDocument, getDocumentContent } = require("./controllers/Document/document-controller.js");
+const Delta = require ('quill-delta');
 
   
 //Este middleware se ejecuta antes de entrar a una ruta protegida, es decir, se necesita un token valido para acceder
@@ -63,7 +64,7 @@ app.listen(PORT, () => console.log('SERVER ON PORT' + PORT));
 
 //Api editor
 const PORT2 = 9000;
-
+Connection();
 const server = http.createServer();
 const io = new Server(server, {
   cors: {
@@ -90,9 +91,14 @@ io.on("connection", (socket) => {
     io.to(id_proyecto).emit("user-count", connectedUsers[id_proyecto].length);
   });
 
-  socket.on("send-changes", (data) => {
-    const { id_proyecto, delta } = data;
-    socket.to(id_proyecto).emit("receive-changes", delta);
+  socket.on("send-changes",async (data) => {
+    const { id_proyecto, content,delta } = data; // Cambio aquí: recibir el contenido completo
+  socket.to(id_proyecto).emit("receive-changes", delta); // Cambio aquí: enviar el contenido completo
+  try {
+    await saveDocument(id_proyecto, content); // Cambio aquí: guardar el contenido completo
+  } catch (error) {
+    console.error("Error saving document:", error);
+  }
   });
 
   socket.on("typing", ({ id_proyecto, nombre }) => {

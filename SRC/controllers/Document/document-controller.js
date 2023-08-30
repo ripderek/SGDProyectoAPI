@@ -1,18 +1,37 @@
-const Document = require('../../../schema/documentshema') 
-const getDocument = async (id) => {
-    if(id===null) return;
+const Document  = require('../../../schema/documentshema');
 
-    const document = await Document.findById(id);
+// Función para guardar el contenido del editor en MongoDB
+const saveDocument = async (id_proyecto, content) => {
+  try {
+    const existingDocument = await Document.findOne({ id_proyecto });
 
-    if(document) return document;
-
-    return await Document.create({_id: id, data:""})
+    if (existingDocument) {
+      existingDocument.content = content;
+      await existingDocument.save();
+    } else {
+      const newDocument = new Document({
+        id_proyecto,
+        content,
+      });
+      await newDocument.save();
+    }
+  } catch (error) {
+    console.error('Error saving document:', error);
+  }
 };
-const updateDocument = async (id, data) => {
-    return await Document.findByIdAndUpdate(id, {data});
+
+// Función para obtener el contenido del editor desde MongoDB
+const getDocumentContent = async (id_proyecto) => {
+  try {
+    const document = await Document.findOne({ id_proyecto });
+    return document ? document.content : null;
+  } catch (error) {
+    console.error('Error getting document content:', error);
+    return null;
+  }
 };
 
 module.exports = {
-    getDocument,
-    updateDocument
+  saveDocument,
+  getDocumentContent,
 };

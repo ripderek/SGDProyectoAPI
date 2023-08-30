@@ -31,6 +31,7 @@
     "pdf-creator-node": "^2.3.5",
     "pdf-lib": "^1.17.1",
     "pg": "^8.11.0",
+    "quill-delta": "^5.1.0",
     "puppeteer": "^21.1.1",
     "socket.io": "^4.7.2"
   }
