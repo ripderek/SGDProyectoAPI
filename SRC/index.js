@@ -5,6 +5,10 @@ const cookieParser = require('cookie-parser');
 const http = require('http');
 const { Server } = require('socket.io');
 
+const Connection = require ('./db_m.js');
+const { getDocument, updateDocument } = require("./controllers/Document/document-controller.js");
+
+  
 //Este middleware se ejecuta antes de entrar a una ruta protegida, es decir, se necesita un token valido para acceder
 const { authenticateToken } = require('./middleware/authorization.js');
 
@@ -19,6 +23,7 @@ const publicRoutes = require('./routes/public-routes.js');
 //----------------NUEVO-----------------------
 const googleRoutes = require("./routes/google-routes.js");
 const flujoRoutes = require('./routes/flujo-routes.js');
+const { Socket } = require('dgram');
 
 //config entorno
 dotenv.config();
@@ -56,27 +61,58 @@ app.listen(PORT, () => console.log('SERVER ON PORT' + PORT));
 
 
 //Api editor
-const app1 = express();
-app1.use(express.json());
+const PORT2 = 9000;
 
-const server = http.createServer(app1);
-const io = new Server(server);
+const server = http.createServer();
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:3000",
+    methods: ["GET", "POST"],
+  },
+});
 
-io.on('connection', (socket) => {
-  console.log('A user connected');
+const connectedUsers = {};
 
-  socket.on('send-changes', (delta) => {
-    console.log('Received changes:', delta);
-    // Emite el delta recibido a todos los clientes excepto al emisor
-    socket.broadcast.emit('receive-changes', delta);
+io.on("connection", (socket) => {
+  let id_proyecto; // Variable para almacenar el ID del proyecto
+
+  socket.on("join-room", (_id_proyecto) => {
+    id_proyecto = _id_proyecto; // Almacena el ID del proyecto en la variable
+    socket.join(id_proyecto);
+
+    if (!connectedUsers[id_proyecto]) {
+      connectedUsers[id_proyecto] = [];
+    }
+
+    connectedUsers[id_proyecto].push(socket.id);
+
+    io.to(id_proyecto).emit("user-count", connectedUsers[id_proyecto].length);
   });
 
-  socket.on('disconnect', () => {
-    console.log('A user disconnected');
+  socket.on("send-changes", (data) => {
+    const { id_proyecto, delta } = data;
+    socket.to(id_proyecto).emit("receive-changes", delta);
+  });
+
+  socket.on("typing", ({ id_proyecto, nombre }) => {
+    socket.to(id_proyecto).emit("typing", { id_proyecto, nombre });
+  });
+  socket.on("send-note", (data) => {
+    const { id_proyecto, nombre, note } = data;
+    socket.to(id_proyecto).emit("receive-note", { nombre, note });
+  });
+
+  socket.on("disconnect", () => {
+    if (id_proyecto) {
+      const index = connectedUsers[id_proyecto].indexOf(socket.id);
+      if (index !== -1) {
+        connectedUsers[id_proyecto].splice(index, 1);
+        io.to(id_proyecto).emit("user-count", connectedUsers[id_proyecto].length);
+      }
+    }
   });
 });
 
-const PORT2 = 9000;
 server.listen(PORT2, () => {
   console.log(`Server is running on port ${PORT2}`);
 });

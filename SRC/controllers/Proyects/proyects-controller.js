@@ -157,27 +157,18 @@ let ipFileServerGuia = "../../uploads/Guias/";
 const subir_guia = async (req, res, next) => {
     try {
         const { id } = req.body;
-
         const { file } = req;
         const documento = `${ipFileServerGuia}${file?.filename}`;
-
         //let ext = path.extname(file);
-
         const { descripcion } = req.body;
         console.log(documento);
-
-
         const extension = extname(file.originalname);
         const ext = file.originalname.split(extension)[1];
-
         console.log(extension);
         console.log(ext);
         console.log("aqui se envia el archivo");
-        // console.log(id,documento,ext.substr(1),descripcion);
-
         const users = await pool.query('call subir_guia($1,$2,$3,$4)', [documento, id, extension, descripcion]);
         console.log(users);
-
         return res.status(200).json({ message: "se subio el archivo" });
     } catch (error) {
         console.log(error);
