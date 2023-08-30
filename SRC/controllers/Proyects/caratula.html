@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>Hello world!</title>
+
+    <style>
+        .image-container {
+            text-align: center;
+        }
+
+        .centered-image {
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            width: 100px;
+            height: auto;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 300px;
+        }
+
+        .cuadrofirma {
+            border: 1px solid black;
+            padding: 2px;
+            text-align: left;
+            height: 70px;
+            width: 70px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="image-container">
+        <img src="data:image/png;base64,{{chunks}}" class="centered-image" />
+    </div>
+
+    <div style="text-align: center;">
+        <h3>{{Empresa}}</h3>
+        <h1> {{ titulo}}</h1>
+    </div>
+    <h3>Elaborado por:</h3>
+    <table>
+        <tr>
+            <th></th>
+            <th>Firma</th>
+        </tr>
+        {{#each users}}
+        <tr>
+            <td>
+                <li> {{this.r_nombre_firma}} </li>
+            </td>
+            <td class="cuadrofirma"></td>
+        </tr>
+        {{/each}}
+    </table>
+    <h3>Revisado por:</h3>
+    <table>
+        <tr>
+            <th></th>
+            <th>Firma</th>
+        </tr>
+        {{#each users2}}
+        <tr>
+            <td>
+                <li> {{this.r_nombre_firma}} </li>
+            </td>
+            <td class="cuadrofirma"></td>
+        </tr>
+        {{/each}}
+    </table>
+    <h3>Autorizado por:</h3>
+    <table>
+        <tr>
+            <th></th>
+            <th>Firma</th>
+        </tr>
+        {{#each users3}}
+        <tr>
+            <td>
+                <li> {{this.r_nombre_firma}} </li>
+            </td>
+            <td class="cuadrofirma"></td>
+        </tr>
+        {{/each}}
+    </table>
+</body>
+
+</html>

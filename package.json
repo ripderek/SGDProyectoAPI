@@ -28,8 +28,10 @@
     "nodemailer": "^6.9.4",
     "passport": "^0.6.0",
     "passport-google-oauth": "^2.0.0",
+    "pdf-creator-node": "^2.3.5",
+    "pdf-lib": "^1.17.1",
     "pg": "^8.11.0",
-    "puppeteer": "^21.0.3",
+    "puppeteer": "^21.1.1",
     "socket.io": "^4.7.2"
   }
 }

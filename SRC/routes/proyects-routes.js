@@ -1,7 +1,7 @@
 const { Router } = require('express');
 const router = Router();
 
-const { crear_proyecto, crear_categoria, proyectos_areas, all_categorias, roles_proyecto, subir_pdf, documentos_proyectos, ver_pdf, list_categorias, editar_categoria, estado_categoria, guias_proyectos, subir_guia, download_guia, ver_flujo_proyecto, borradores_proyecto, proyect_data, niveles_estado, ver_flujo_proyecto_nivel2, subir_primer_nivel, id_doc, subir_level, publicar_doc } = require('../controllers/Proyects/proyects-controller');
+const { crear_proyecto, crear_categoria, proyectos_areas, all_categorias, roles_proyecto, subir_pdf, documentos_proyectos, ver_pdf, list_categorias, editar_categoria, estado_categoria, guias_proyectos, subir_guia, download_guia, ver_flujo_proyecto, borradores_proyecto, proyect_data, niveles_estado, ver_flujo_proyecto_nivel2, subir_primer_nivel, id_doc, subir_level, publicar_doc, deshabilitar_flujo, rechazar_proyecto, historial_proyecto, ver_flujo_rechazado, ver_flujo_historial, ver_documentos_extras, ver_pdf_url, subir_pdf_extra, combinar_pdfs, ver_pdf_2, participantes_actuales_proyecto, participantes_sin_proyectos, agregar_usuario_proyecto, expulsar_usuario_proyecto, generar_caratula, generar_lista_usuarios } = require('../controllers/Proyects/proyects-controller');
 
 const { upload } = require('../middleware/multer_pdf');
 const { upload_guia } = require('../middleware/multer_guias');
@@ -30,5 +30,21 @@ router.post('/subir_nivel', subir_primer_nivel);
 router.get('/UltimoPDF/:id', id_doc);
 router.post('/SubirLevel/:id', subir_level);
 router.post('/Publicar/:id', publicar_doc);
+router.post('/EliminarFLujo/:id', deshabilitar_flujo);
+router.post('/Rechazar/:id', rechazar_proyecto);
+router.get('/Historial/:id', historial_proyecto);
+router.get('/FlujoRechazado/:id', ver_flujo_rechazado);
+router.get('/VerFlujoHistorial/:id', ver_flujo_historial);
+router.get('/DocumentosExtras/:id', ver_documentos_extras);
+router.get('/VerpdfUrl/:id', ver_pdf_url);
+router.post('/subir_pdf_extra', upload.single('file'), subir_pdf_extra);
+router.post('/Combinar_pdfs/:id', combinar_pdfs);
+router.get('/pdf2/:id', ver_pdf_2);
+router.get('/participantes_proyecto/:id/:id2', participantes_actuales_proyecto);
+router.get('/participantes_sin_proyecto/:id/:id2', participantes_sin_proyectos);
+router.post('/agregar_usuario_proyecto', agregar_usuario_proyecto);
+router.post('/expulsar_usuario_proyecto', expulsar_usuario_proyecto);
+router.post('/generar_caratula/:id', generar_caratula);
+router.post('/generar_listado_participantes/:id', generar_lista_usuarios);
 
 module.exports = router;
