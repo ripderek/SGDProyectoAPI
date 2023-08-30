@@ -1,16 +1,17 @@
-const mongoose = require ("mongoose");
+// documentschema.js
+const mongoose = require('mongoose');
 
-const documentshema = mongoose.Schema({
-    _id:{
-        type: String,
-        required: true
-    },
-    data:{
-        type: Object,
-        required: true
-    }
+const documentSchema = new mongoose.Schema({
+  id_proyecto: {
+    type: String,
+    required: true,
+  },
+  content: {
+    type: Object,
+    required: true,
+  },
 });
 
-const document = mongoose.model('document', documentshema);
+const Document = mongoose.model('Document', documentSchema);
 
-module.exports = document;
+module.exports = Document;
