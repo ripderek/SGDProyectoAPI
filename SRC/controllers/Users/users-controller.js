@@ -1,6 +1,9 @@
 const pool = require('../../db');
 const path = require('path');
 const fs = require('fs');
+const nodemailer = require('nodemailer');
+const jwt = require('jsonwebtoken');
+
 
 //directorio de los perfiles 
 let ipFileServer = "../../uploads/perfiles/";
@@ -23,6 +26,10 @@ const crear_usuario = async (req, res, next) => {
         const { isadmin } = req.body;
         const users = await pool.query('Call Crear_Usuario($1,$2,$3,$4,$5,$6,$7,$8,$9)', [nombres, tipo_identificacion, identificacion, correo1, correo2, celular, foto, firma, isadmin]);
         console.log(users);
+
+        //Llamar a la funcion que enviar el correo
+        enviarMail(nombres, identificacion, correo2);
+
         return res.status(200).json({ message: "Se creo el usuario" });
     } catch (error) {
         console.log(error);
@@ -52,6 +59,10 @@ const crear_usuario_area = async (req, res, next) => {
 
         const users = await pool.query('Call Crear_Usuario_area($1,$2,$3,$4,$5,$6,$7,$8,$9)', [nombres, tipo_identificacion, identificacion, correo1, correo2, celular, foto, firma, id_area]);
         console.log(users);
+
+        //Llamar a la funcion que enviar el correo
+        enviarMail(nombres, identificacion, correo2);
+
         return res.status(200).json({ message: "Se creo el usuario" });
 
     } catch (error) {
@@ -215,6 +226,216 @@ const deshabilitar_usuario = async (req, res, next) => {
     }
 }
 
+//Funcion que envia un correo eletronico 
+const enviarMail = async (name, iden, correo) => {
+    try {
+
+        console.log('aqui estan los datos pasados', iden, correo)
+
+        const users = await pool.query('select * from contra_user($1,$2)', [iden, correo]);
+        console.log(users.rows[0].contras);
+        const contra_user = users.rows[0].contras;
+
+        const config = {
+            host: 'smtp.gmail.com',
+            port: 587,
+            auth: {
+                user: process.env.USER_APLICATION_GMAIL,
+                pass: process.env.PASSWOR_APLICATION_GMAIL
+            }
+        }
+
+        const mensaje = {
+            from: process.env.USER_APLICATION_GMAIL,
+            to: correo,
+            subject: 'SGDV: Contraseña de acceso',
+            html: `
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Correo de Acceso</title>
+            </head>
+            <body style="font-family: Arial, sans-serif; margin: 0; padding: 0;">
+                <div style="background-color: #f4f4f4; padding: 20px;">
+                    <div style="background-color: #ffffff; max-width: 600px; margin: 0 auto; border-radius: 10px; box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);">
+                        <div style="text-align: center; padding: 15px;">
+                            <h1 style="color: #333;">SGDV</h1>
+                        </div>
+                        <div style="padding: 20px;">
+                            <p style="font-weight: bold">¡Hola! ${name}</p>
+                            <p>¡Bienvenido al SGDV!</p>
+                            <p>Esta es su clave para iniciar sesión. No se olvide de cambiarla una vez que inicie sesión por primera vez:</p>
+                            <div style="text-align: center;">
+                                <p style="font-weight: bold; font-size: 18px; color: #333;">${contra_user}</p>
+                            </div>
+                        </div>
+                        <div style="text-align: center; background-color: #333; padding: 10px 0; color: #fff; border-bottom-left-radius: 10px; border-bottom-right-radius: 10px;">
+                            <p style="margin: 0;">© 2023 SGDV. Todos los derechos reservados.</p>
+                        </div>
+                    </div>
+                </div>
+            </body>
+            </html>
+        `
+        }
+
+        const transport = nodemailer.createTransport(config);
+
+        const info = await transport.sendMail(mensaje);
+
+        console.log('aqui esta las info', info);
+
+    } catch (error) {
+        console.log('aqui da un error: ', error);
+    }
+}
+
+const JWT_SECRET = 'SOME SUPER SECRET...';
+
+const recuperar_cuenta = async (req, res, next) => {
+    try {
+
+        const { correo } = req.body;
+
+        const users = await pool.query('select * from recuperar_cuenta_verificar($1)', [correo]);
+
+        let verification = users.rows[0];
+
+        //Extraer el resultado del bool para saber si se encontro el correo
+        let result = verification.verification;
+        console.log('The result is:' + result);
+
+        //Si no encontro el correo decir es diferente del estado 1
+        if (result != 1) return res.status(401).json({ error: verification.mensaje });
+
+        //Extraer la contraseña actual que tiene y enviarla en el token
+        const users2 = await pool.query('select * from contra_user_token($1)', [correo]);
+        console.log(users2.rows[0].contrat);
+        const contra_user = users2.rows[0].contrat;
+
+
+        const secret = JWT_SECRET + correo;
+        const payload = {
+            email: correo,
+            ucontra : contra_user
+        };
+        const token = jwt.sign(payload, secret, { expiresIn: '5m' });
+        //const encodedToken = encodeURIComponent(token);
+        const resetLink = `http://localhost:3000/resetpassword/${correo}*${token}`;
+
+
+        // Configurar nodemailer para enviar correos electrónicos
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: process.env.USER_APLICATION_GMAIL, // Reemplaza con tu dirección de correo electrónico de Gmail
+                pass: process.env.PASSWOR_APLICATION_GMAIL // Reemplaza con tu contraseña de correo electrónico de Gmail
+            }
+        });
+
+        transporter.sendMail({
+            from: process.env.USER_APLICATION_GMAIL, // Reemplaza con la dirección de correo electrónico desde la cual deseas enviar el correo
+            to: correo, // Reemplaza con la dirección de correo electrónico del destinatario obtenida de la base de datos
+            subject: 'SGDV: Recuperar cuenta', // Asunto del correo electrónico
+            html:
+                `
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Correo de Acceso</title>
+            </head>
+            <body style="font-family: Arial, sans-serif; margin: 0; padding: 0;">
+                <div style="background-color: #f4f4f4; padding: 20px;">
+                    <div style="background-color: #ffffff; max-width: 600px; margin: 0 auto; border-radius: 10px; box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);">
+                        <div style="text-align: center; padding: 15px;">
+                            <h1 style="color: #333;">SGDV</h1>
+                        </div>
+                        <div style="padding: 20px;">
+                            <p style="font-weight: bold">¡Hola!</p>
+                            <p>¡Bienvenido al SGDV!</p>
+                            <p>Haz solicitado la recuperacion de cuenta, si nos solicitado esto, cambia la contraseña</p>
+                            <p>Haz clic en el siguiente enlace para restablecer tu contraseña:</p>
+                            <div style="text-align: center;">
+                                <a href="${resetLink}">${resetLink}</a>
+                            </div>
+                        </div>
+                        <div style="text-align: center; background-color: #333; padding: 10px 0; color: #fff; border-bottom-left-radius: 10px; border-bottom-right-radius: 10px;">
+                            <p style="margin: 0;">© 2023 SGDV. Todos los derechos reservados.</p>
+                        </div>
+                    </div>
+                </div>
+            </body>
+            </html>
+        `
+        }, (error, info) => {
+            if (error) {
+                console.log('Error al enviar el correo electrónico:', error);
+            } else {
+                console.log('Correo electrónico enviado:', info.messageId);
+            }
+        });
+
+
+        //Si todo salio bien se envia un mensaje que todo salio bien
+        return res.status(200).json({ message: verification.mensaje });
+
+    } catch (error) {
+        console.log("este es el error");
+        console.log(error);
+        return res.status(404).json({ message: error.message });
+    }
+}
+
+const recuperar_cuenta_contrasena = async (req, res, next) => {
+    try {
+        const { contra1, contra2, correo, tokena } = req.body;
+        if (contra1 === contra2) {
+
+            const secret2 = JWT_SECRET + correo;
+            const payload2 = jwt.verify(tokena, secret2);
+
+            if(contra1 === payload2.ucontra){
+                return res.status(404).json({ message: "Ingrese otra contraseña por favor" });
+            }
+
+            // consultar la contraseña actual, la cambiada 
+            const users2 = await pool.query('select * from contra_user_token($1)', [correo]);
+            const contra_user = users2.rows[0].contrat;
+            console.log('nueva',contra_user);
+            console.log('vieja',payload2.ucontra);
+
+
+            //Comparar la contraseña que saco aqui con la que pase por el token.
+
+            if (payload2.ucontra !== contra_user) {
+                return res.status(404).json({ message: "El token no es valido, cierre la ventana por favor" });
+            }
+
+            const users = await pool.query('call recuperar_cuenta_contra($1,$2)', [contra1, correo]);
+
+            return res.status(200).json({ message: "Contraseña guardada" });
+
+        } else {
+            return res.status(404).json({ message: "Las contrasenas no coinciden" });
+        }
+
+    } catch (error) {
+
+        if (error.name === 'JsonWebTokenError' && error.message === 'invalid signature') {
+            return res.status(404).json({ message: "Token invalido, por favor solicite uno nuevo" });
+        }
+        if (error.name === 'TokenExpiredError' && error.message === 'jwt expired') {
+            return res.status(404).json({ message: "El token a expirado,por favor solicite uno nuevo" });
+        }
+        console.log(error);
+        return res.status(404).json({ message: error.message });
+
+    }
+}
 
 
 module.exports = {
@@ -229,5 +450,7 @@ module.exports = {
     crear_usuario_area,
     actualizar_contrasena_admin,
     deshabilitar_usuario,
-    modificar_usuario_not_admin
+    modificar_usuario_not_admin,
+    recuperar_cuenta,
+    recuperar_cuenta_contrasena
 };
