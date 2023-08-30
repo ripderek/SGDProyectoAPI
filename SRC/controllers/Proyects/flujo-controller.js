@@ -35,11 +35,10 @@ const crear_flujo_proyecto = async (req, res, next) => {
     try {
         const { id, id2 } = req.params;
         const { list_niveles } = req.body;
-
-        console.log(id);
-        console.log(id2);
-        console.log("Lista de los niveles");
-        console.log(list_niveles);
+        // console.log(id);
+        // console.log(id2);
+        // console.log("Lista de los niveles");
+        // console.log(list_niveles);
         const users = await pool.query('call Crear_flujo_Proyecto($1,$2,$3)', [id, id2, JSON.stringify(list_niveles)]);
         return res.status(200).json({ message: "Se creo el flujo del proyecto" });
     } catch (error) {
