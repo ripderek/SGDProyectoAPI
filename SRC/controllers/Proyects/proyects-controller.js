@@ -173,6 +173,12 @@ const subir_pdf = async (req, res, next) => {
                 size: fontsize,
                 font: font,
             })
+            pageActually.drawText(dataProyect.rows[0].r_version, {
+                x: 170,
+                y: height / 2 + 305,
+                size: fontsize,
+                font: font,
+            })
             //fecha de publicacion
             pageActually.drawText("Fecha: ", {
                 x: 250,
@@ -604,6 +610,17 @@ const ver_documentos_extras = async (req, res, next) => {
         return res.status(404).json({ message: error.message });
     }
 }
+//funcion para ver los documentos contraportadas 
+const ver_documentos_contraportadas = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const users = await pool.query('select * from Ver_contraportadas($1)', [id]);
+        //console.log(users);
+        return res.status(200).json(users.rows);
+    } catch (error) {
+        return res.status(404).json({ message: error.message });
+    }
+}
 //funcion para subir los documentos extras segun el nivel 
 const subir_pdf_extra = async (req, res, next) => {
     try {
@@ -742,6 +759,12 @@ const subir_pdf_extra = async (req, res, next) => {
             //version del proyecto: 
             pageActually.drawText("Version: ", {
                 x: 117,
+                y: height / 2 + 305,
+                size: fontsize,
+                font: font,
+            })
+            pageActually.drawText(dataProyect.rows[0].r_version, {
+                x: 170,
                 y: height / 2 + 305,
                 size: fontsize,
                 font: font,
@@ -963,30 +986,79 @@ const generar_lista_usuarios = async (req, res, next) => {
     try {
         //obtener el id del proyecto para hacer la consulta de la data para generar los pdf 
         const { id } = req.params;
+        //antes de generar la cartula y toda ostia tio, primero verificar si hay documentos extras y adjuntarlos al proyecto inicial 
+        //primero necesito obtener el primer pdf que seria el documento actual del proyecto de la columna 'url2'
+        //devuelve un registro
+        const documento_subido_modificado = await pool.query('select * from ver_doc_modificado($1)', [id]);
+        //segundo necesito todos los documentos extras con esta en true para juntarlo 
+        //devuelve varios
+        const documentos_extras = await pool.query('select * from Ver_documentos_extras($1)', [id]);
+        //antes de empezar a unir los pdf se debe preguntar si existen o no documentos apra ajuntar 
+        //de no existir simplemente se omite este paso 
+        let nuevaURLv = '';
+        if (documentos_extras.rows.length != 0) {
+            const VectorConDocumentos = [];
+            VectorConDocumentos.push(documento_subido_modificado.rows[0].p_url_doc);
+            for (var i = 0; i < documentos_extras.rows.length; i++) {
+                //  Agregar elementos al vector
+                VectorConDocumentos.push(documentos_extras.rows[i].r_url_doc);
+            }
+            //console.log("URLDOCUMENTOS: " + VectorConDocumentos);
+            //las url de los documeton estan en el vector
+            const pdfDoc = await PDFDocument.create();
+            for (const pdfBytes of VectorConDocumentos) {
+                //primero obtener el buffer del documento xd 
+                const urlDocBase = path.join(__dirname, "../" + pdfBytes)
+                const DocBaseBuffer = await fs.readFileSync(urlDocBase);
+                const DocBytes = await PDFDocument.load(DocBaseBuffer)
+                const copiedPages = await pdfDoc.copyPages(DocBytes, DocBytes.getPageIndices());
+                copiedPages.forEach((page) => {
+                    pdfDoc.addPage(page);
+                });
+            }
+            //guardar el pdf 
+            var nuevaURLv2 = "./uploads/proyectos/" + 'documentomodificado' + Date.now() + '.pdf';
+            fs.writeFileSync(nuevaURLv2, await pdfDoc.save());
+            //../.
+            nuevaURLv = '../.' + nuevaURLv2;
+        }
+        else {
+            console.log('El proyecto no tiene documetos extras' + id);
+            nuevaURLv = documento_subido_modificado.rows[0].p_url_doc;
+        }
+        //no subir niveles, solo actualizar el documento con los nuevos añadidos
+        //creo que este me le cambia el estado a todos y solo debe de cambiar a los que tienen true como carta 
+        const users2 = await pool.query('call adjuntar_documentos_proyecto_after($1,$2)', [id, nuevaURLv]);
+
+
+
+
         //primero generar la caratula y guardar la url en un variable para luego juntar todos los documentos 
         const titulo = await pool.query('select * from  titulo_proyecto_pdf($1)', [id]);
 
         const tituloDelDocumento = titulo.rows[0].r_titulo_proyecto;
         //ruta donde se guardara la caratula        documento_subido.rows[0].p_titulo + Date.now()
-        const rutaCaratula = "./uploads/proyectos/" + 'Caratula' + '.pdf';
+        // var nuevaURLv2 = "./uploads/proyectos/" + 'documentomodificado' + Date.now() + '.pdf';
+        var fech = Date.now();
+        var rutaCaratula = "./uploads/proyectos/Caratula" + Date.now() + '.pdf';
         //esto sive para generar la caratula 
-        (async () => {
-            //const urlFotoEmpresa = path.join(__dirname, "../" + dataProyect.rows[0].r_url_foto_empresa)
-            //../../uploads/perfiles/logo_empresa-1690769537460.png
-            //esta url debe ser obtenida desde la base de datos solo reemplazar despues del +
-            const urlCaratula = path.join(__dirname, "../" + "../../uploads/Galeria/caratula.jpg");
-            const browser = await puppeteer.launch();
-            const page = await browser.newPage();
-            const chunks = fs.readFileSync(urlCaratula).toString('base64');
+
+        //const urlFotoEmpresa = path.join(__dirname, "../" + dataProyect.rows[0].r_url_foto_empresa)
+        //../../uploads/perfiles/logo_empresa-1690769537460.png
+        //esta url debe ser obtenida desde la base de datos solo reemplazar despues del +
+        const urlCaratula = path.join(__dirname, "../" + "../../uploads/Galeria/caratula.jpg");
+        const browser = await puppeteer.launch();
+        const page = await browser.newPage();
+        const chunks2 = fs.readFileSync(urlCaratula).toString('base64');
 
 
-            const content = `
+        const content = `
               <!DOCTYPE html>
               <html>
               <head> 
               <style>
               body {
-                background-image: url("data:image/jpeg;base64,${chunks}");
+                background-image: url("data:image/jpeg;base64,${chunks2}");
                 background-size: cover;
                 width: 21cm;
                 height: 29.7cm;
@@ -1009,12 +1081,12 @@ const generar_lista_usuarios = async (req, res, next) => {
               </body>
               </html>
             `;
-            //uploads\Galeria\caratula.jpg
-            await page.setContent(content);
-            await page.pdf({ path: rutaCaratula, format: 'A4', printBackground: true });
+        //uploads\Galeria\caratula.jpg
+        await page.setContent(content);
+        await page.pdf({ path: rutaCaratula, format: 'A4', printBackground: true });
 
-            await browser.close();
-        })();
+        await browser.close();
+
         //hasta aqui genera la caratula
 
         //crear pdf con la lista de los usuarios para guardar la url en una variable y juntar todos los documentos
@@ -1031,21 +1103,12 @@ const generar_lista_usuarios = async (req, res, next) => {
         var html = fs.readFileSync("SRC/controllers/Proyects/caratula.html", "utf8");
         console.log("file://C:/Users/casti/OneDrive/Escritorio/BackendSGD/uploads/perfiles/logo_empresa-1690769537460.png");
         //ruta donde se guardara el listado            documento_subido.rows[0].p_titulo + Date.now()
-        const rutaListado = "./uploads/proyectos/" + 'Listado' + '.pdf';
+        const rutaListado = "./uploads/proyectos/" + 'Listado' + Date.now() + '.pdf';
         var options = {
             format: "A4",
             orientation: "portrait",
             border: "10mm",
             localUrlAccess: true,
-            footer: {
-                height: "28mm",
-                contents: {
-                    first: 'Cover page',
-                    2: 'Second page', // Any page number is working. 1-based index
-                    default: '<span style="color: #444;">{{page}}</span>/<span>{{pages}}</span>', // fallback value
-                    last: 'Last Page'
-                }
-            }
         };
         var document = {
             html: html,
@@ -1060,14 +1123,8 @@ const generar_lista_usuarios = async (req, res, next) => {
             path: rutaListado,
             type: "",
         };
-        pdf
-            .create(document, options)
-            .then((res) => {
-                console.log(res);
-            })
-            .catch((error) => {
-                console.error(error);
-            });
+        await pdf.create(document, options);
+
         //ahora juntar la caratula, la lista de usuarios y el documento modificado del proyecto para hacerlo uno solo xd 
         //primero obtener el pdf modificado de la base de datos 
         const documento_subido = await pool.query('select * from ver_doc_modificado($1)', [id]);
@@ -1077,6 +1134,15 @@ const generar_lista_usuarios = async (req, res, next) => {
         //            nuevaURL = '../.' + nuevaURL2;
         VectorConDocumentos.push('../.' + rutaCaratula);
         VectorConDocumentos.push('../.' + rutaListado);
+        //el siguiente push tiene que ser sobre las contraportadas 
+        const contraportadas = await pool.query('select * from Ver_contraportadas($1)', [id]);
+        if (contraportadas.rows.length != 0) {
+            console.log("Hay contraportadas");
+            for (var i = 0; i < contraportadas.rows.length; i++) {
+                //  Agregar elementos al vector
+                VectorConDocumentos.push(contraportadas.rows[i].r_url_doc);
+            }
+        }
         VectorConDocumentos.push(documento_subido.rows[0].p_url_doc);
         //ahora unir los documentos en un solo pdf
         const pdfDoc = await PDFDocument.create();
@@ -1092,9 +1158,82 @@ const generar_lista_usuarios = async (req, res, next) => {
         }
         //guardar el pdf 
         //cuando se envie a la base de datos se tiene que enviar con '../.' + URL 
-        const nuevaURL = 'nuevodoc.pdf';
+        //const rutaListado = "./uploads/proyectos/" + 'Listado' + Date.now() + '.pdf';
+        const nuevaURL = "./uploads/proyectos/" + 'NUEVO' + Date.now() + '.pdf';
         fs.writeFileSync(nuevaURL, await pdfDoc.save());
+
+        //tomar el primer doc con todos los encabezados
+
+        const urlArchivos = path.join(__dirname, "../" + nuevaURLv)
+        const buffer = await fs.readFileSync(urlArchivos);
+        const pdfDocEncabezados = await PDFDocument.load(buffer)
+        console.log("Paguinas del doc" + pdfDocEncabezados.getPages().length);
+        //const pages = pdfDocEncabezados.getPages();
+
+        //mes de prueba nomas sin base de gatos jijiji ja xd setzo skere modo diablo
+        const currentDate = new Date();
+        const currentMonth = currentDate.getMonth() + 1;
+        var Mes = currentMonth === 1 ? "Enero" : currentMonth === 2 ? "Febrero" : currentMonth === 3 ? "Marzo" : currentMonth === 4 ? "Abril" : currentMonth === 5 ? "Mayo" : currentMonth === 6 ? "Junio" : currentMonth === 7 ? "Julio" : currentMonth === 8 ? "Agosto" : currentMonth === 9 ? "Septiembre" : currentMonth === 10 ? "Octubre" : currentMonth === 11 ? "Noviembre" : "Diciembre";
+        const Anio = currentDate.getFullYear();
+        //pdf con todo las paguinas 
+        //nuevaURL         const urlArchivos = path.join(__dirname, "../" + documento)
+        var nueval222 = "../." + nuevaURL;
+        const urlArchivosTodo = path.join(__dirname, "../" + nueval222)
+        const buffertodo = await fs.readFileSync(urlArchivosTodo);
+        const pDFTODO = await PDFDocument.load(buffertodo)
+        console.log("Paguinas del doc" + pDFTODO.getPages().length);
+        const pages = pDFTODO.getPages();
+        //paguina para poner la enumeracion 
+        var NumPag = (pDFTODO.getPages().length - pdfDocEncabezados.getPages().length) + 1;
+        console.log("Paguina donde empieza la enumaracion: " + NumPag);
+        let fontsize = 10
+        var numerototal = pDFTODO.getPages().length;
+        for (i = 0; i < pDFTODO.getPages().length; i++) {
+            var numero_paguina = i + 1;
+            if (i >= NumPag - 1) {
+                const pageActually = pages[i]
+                const { width, height } = pageActually.getSize()
+                //Numero de pagina
+                pageActually.drawText(numero_paguina + " de " + numerototal, {
+                    x: 460,
+                    y: height / 2 + 305,
+                    size: fontsize,
+                })
+                pageActually.drawText(Mes + " " + Anio.toString(), {
+                    x: 300,
+                    y: height / 2 + 305,
+                    size: fontsize,
+                })
+            }
+
+        }
+        // const rutaCaratula = "./uploads/proyectos/" + 'Caratula' + Date.now() + '.pdf';
+        //tituloDelDocumento
+        const rutaNuevoDOc = "./uploads/proyectos/" + tituloDelDocumento + Date.now() + '.pdf';
+        fs.writeFileSync(rutaNuevoDOc, await pDFTODO.save());
+        //aqui guardar el documento en la base de datos y cambiar todas las portadas en false 
+        var ur = "../." + rutaNuevoDOc;
+        const guardar_doc = await pool.query('call aceptar_documento($1,$2)', [ur, id]);
+
+
+
         return res.status(200).json({ message: "Se preparo el documento" });
+    } catch (error) {
+        console.log(error);
+        return res.status(404).json({ message: error.message });
+    }
+}
+//subir una contraportada 
+const subir_contraportada = async (req, res, next) => {
+    try {
+        const { id } = req.body;
+        const { descripcion } = req.body;
+        const { file } = req;
+        const documento = `${ipFileServer}${file?.filename}`;
+        console.log(documento);
+        const users = await pool.query('call insertar_contra_portadas($1,$2,$3)', [documento, id, descripcion]);
+        //console.log(users);
+        return res.status(200).json({ message: "se subio el archivo" });
     } catch (error) {
         console.log(error);
         return res.status(404).json({ message: error.message });
@@ -1141,5 +1280,7 @@ module.exports = {
     agregar_usuario_proyecto,
     expulsar_usuario_proyecto,
     generar_caratula,
-    generar_lista_usuarios
+    generar_lista_usuarios,
+    ver_documentos_contraportadas,
+    subir_contraportada
 };
