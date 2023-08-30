@@ -78,10 +78,13 @@ const connectedUsers = {};
 io.on("connection", (socket) => {
   let id_proyecto; // Variable para almacenar el ID del proyecto
 
-  socket.on("join-room", (_id_proyecto) => {
+  socket.on("join-room",async  (_id_proyecto) => {
     id_proyecto = _id_proyecto; // Almacena el ID del proyecto en la variable
     socket.join(id_proyecto);
-
+    // Obtener el contenido del documento desde MongoDB
+    const content = await getDocumentContent(id_proyecto);
+    socket.emit("document-content", content);
+    console.log(content);
     if (!connectedUsers[id_proyecto]) {
       connectedUsers[id_proyecto] = [];
     }
@@ -90,9 +93,8 @@ io.on("connection", (socket) => {
 
     io.to(id_proyecto).emit("user-count", connectedUsers[id_proyecto].length);
   });
-
-  socket.on("send-changes",async (data) => {
-    const { id_proyecto, content,delta } = data; // Cambio aquí: recibir el contenido completo
+  socket.on("send-changes",async (data) => {  
+  const { id_proyecto, content,delta } = data; // Cambio aquí: recibir el contenido completo
   socket.to(id_proyecto).emit("receive-changes", delta); // Cambio aquí: enviar el contenido completo
   try {
     await saveDocument(id_proyecto, content); // Cambio aquí: guardar el contenido completo
