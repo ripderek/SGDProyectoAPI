@@ -12,8 +12,8 @@ var pdf = require("pdf-creator-node");
 const { PDFDocument, rgb, StandardFonts } = require('pdf-lib');
 const crear_proyecto = async (req, res, next) => {
     try {
-        const { p_titulo, p_id_area, p_id_categoria, p_prefijo_proyecto, p_subir_docs } = req.body;
-        const users = await pool.query('call crear_proyecto($1,$2,$3,$4,$5)', [p_titulo, p_id_area, p_id_categoria, p_prefijo_proyecto, p_subir_docs]);
+        const { p_titulo, p_id_area, p_id_categoria, p_prefijo_proyecto } = req.body;
+        const users = await pool.query('call crear_proyecto($1,$2,$3,$4)', [p_titulo, p_id_area, p_id_categoria, p_prefijo_proyecto]);
         console.log(users);
         return res.status(200).json({ message: "Se creo el proyecto" });
     } catch (error) {
@@ -1239,7 +1239,16 @@ const subir_contraportada = async (req, res, next) => {
         return res.status(404).json({ message: error.message });
     }
 }
-
+//fucion para listar los proyectos publicados para realizarles reformas 
+const proyectos_publicados_para_reformas = async (req, res, next) => {
+    try {
+        const users = await pool.query('select * from proyectos_publicados_reformas()');
+        console.log(users);
+        return res.status(200).json(users.rows);
+    } catch (error) {
+        return res.status(404).json({ message: error.message });
+    }
+}
 module.exports = {
     crear_proyecto,
     crear_categoria,
@@ -1282,5 +1291,6 @@ module.exports = {
     generar_caratula,
     generar_lista_usuarios,
     ver_documentos_contraportadas,
-    subir_contraportada
+    subir_contraportada,
+    proyectos_publicados_para_reformas
 };
