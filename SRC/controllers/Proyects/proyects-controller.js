@@ -7,7 +7,6 @@ const path = require('path');
 const puppeteer = require('puppeteer');
 var pdf = require("pdf-creator-node");
 
-
 //para editar el pdf i
 const { PDFDocument, rgb, StandardFonts } = require('pdf-lib');
 const crear_proyecto = async (req, res, next) => {
@@ -1239,6 +1238,32 @@ const subir_contraportada = async (req, res, next) => {
         return res.status(404).json({ message: error.message });
     }
 }
+//funcion para recibir un array buffer y convertirlo en pdf para el editor de texto
+const Convertir_Editor_a_pdf = async (req, res, next)=>{
+    try {
+        const {jsPDF} = require('jspdf');
+
+        const {id_proyecto, array_buffer} = req.body;
+        const doc = new  jsPDF({
+            orientation: "portrait",
+            unit: "mm",
+            format: "a4",
+          });
+          console.log("Este es el array buffer del pdf "+array_buffer)
+        // Convierte el buffer recibido en un formato Uint8Array
+        const uint8Array = new Uint8Array(array_buffer);
+        // Carga el contenido Uint8Array en el documento jsPDF
+        doc.loadFile(uint8Array);
+
+        // Guarda el PDF en el sistema de archivos
+        const outputPath = 'output.pdf';
+        fs.writeFileSync(outputPath, doc.output());
+        return res.status(200).json({ message: "se subio el archivo" });
+    } catch (error) {
+        console.log(error)
+        return res.status(404).json({ message: error.message });
+    }
+} 
 
 module.exports = {
     crear_proyecto,
@@ -1282,5 +1307,6 @@ module.exports = {
     generar_caratula,
     generar_lista_usuarios,
     ver_documentos_contraportadas,
-    subir_contraportada
+    subir_contraportada,
+    Convertir_Editor_a_pdf
 };
