@@ -248,7 +248,17 @@ const data_area_i = async (req, res, next) => {
         return res.status(404).json({ message: error.message });
     }
 }
-
+//funcion para listar las areas que administra un usuario mediante su id de user 
+const areas_admin_user = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const user = await pool.query('select * from areas_que_administra($1)', [id]);
+        return res.status(200).json(user.rows);
+    } catch (error) {
+        console.log(error);
+        return res.status(404).json({ message: error.message });
+    }
+}
 module.exports = {
     crear_area,
     all_data_area,
@@ -266,5 +276,6 @@ module.exports = {
     deshabilitar_usuario_area,
     cambiar_rol_usuario_admin,
     areas_para_flujos,
-    data_area_i
+    data_area_i,
+    areas_admin_user
 };
