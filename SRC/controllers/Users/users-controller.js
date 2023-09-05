@@ -112,11 +112,25 @@ const datos_Usuarios = async (req, res, next) => {
     }
 }
 
+//Listas los uarios usando la paginacion
 const all_data_users = async (req, res, next) => {
     try {
-        const users = await pool.query('select * from Users_allData()');
+        const {pag} = req.params;
+        const users = await pool.query('select * from users_paginacion($1)',[pag]);
         console.log(users);
         return res.status(200).json(users.rows);
+    } catch (error) {
+        next(error);
+    }
+}
+
+//La cantidad de paginas que se pueden mostrar del usuario
+const total_pag_users = async (req, res, next) => {
+    try {
+        const users = await pool.query('select * from users_total_paginacion()');
+        const totalPaginas = users.rows[0].r_total_paginas;
+        console.log(totalPaginas);
+        return res.status(200).json({ totalPaginas });
     } catch (error) {
         next(error);
     }
@@ -452,5 +466,6 @@ module.exports = {
     deshabilitar_usuario,
     modificar_usuario_not_admin,
     recuperar_cuenta,
-    recuperar_cuenta_contrasena
+    recuperar_cuenta_contrasena,
+    total_pag_users
 };

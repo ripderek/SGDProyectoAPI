@@ -11,8 +11,8 @@ var pdf = require("pdf-creator-node");
 const { PDFDocument, rgb, StandardFonts } = require('pdf-lib');
 const crear_proyecto = async (req, res, next) => {
     try {
-        const { p_titulo, p_id_area, p_id_categoria, p_prefijo_proyecto, p_subir_docs } = req.body;
-        const users = await pool.query('call crear_proyecto($1,$2,$3,$4,$5)', [p_titulo, p_id_area, p_id_categoria, p_prefijo_proyecto, p_subir_docs]);
+        const { p_titulo, p_id_area, p_id_categoria, p_prefijo_proyecto } = req.body;
+        const users = await pool.query('call crear_proyecto($1,$2,$3,$4)', [p_titulo, p_id_area, p_id_categoria, p_prefijo_proyecto]);
         console.log(users);
         return res.status(200).json({ message: "Se creo el proyecto" });
     } catch (error) {
@@ -142,17 +142,20 @@ const subir_pdf = async (req, res, next) => {
 
             })
             //codigo del proyecto
+
             pageActually.drawText("Codigo: ", {
                 x: 117,
                 y: height / 2 + 345,
                 size: fontsize,
                 font: font,
             })
+            /*
             pageActually.drawText(dataProyect.rows[0].r_codigo, {
                 x: 165,
                 y: height / 2 + 345,
                 size: fontsize
             })
+            */
             //area responsable
             pageActually.drawText("Responsable: ", {
                 x: 117,
@@ -172,12 +175,16 @@ const subir_pdf = async (req, res, next) => {
                 size: fontsize,
                 font: font,
             })
+            //version del proyecto ya no se agrega al subir un pdf o un documento extra porque puede cambiar 
+            //esto anadirlo cuando se prepare el documento
+            /*
             pageActually.drawText(dataProyect.rows[0].r_version, {
                 x: 170,
                 y: height / 2 + 305,
                 size: fontsize,
                 font: font,
             })
+            */
             //fecha de publicacion
             pageActually.drawText("Fecha: ", {
                 x: 250,
@@ -445,6 +452,7 @@ const ver_flujo_proyecto_nivel2 = async (req, res, next) => {
 }
 const subir_primer_nivel = async (req, res, next) => {
     try {
+        //SI EL PROYECTO TIENE REFORMA = TRUE ENTONCES SE DEBE DE SUMAR EL PESO DEL FLUJO SELECCIONADO CON LA VERSION ACTUAL DEL PROYECTO Y HACER UN UPDATE DE LA VERSION Y DEL CODIGO DEL PROYECTO SKERE MODO DIABLO
         const { list_niveles } = req.body;
         const users = await pool.query('call subir_primer_nivel($1)', [JSON.stringify(list_niveles)]);
         return res.status(200).json({ message: "Se subio de nivel el proyecto" });
@@ -738,11 +746,13 @@ const subir_pdf_extra = async (req, res, next) => {
                 size: fontsize,
                 font: font,
             })
+            /*
             pageActually.drawText(dataProyect.rows[0].r_codigo, {
                 x: 165,
                 y: height / 2 + 345,
                 size: fontsize
             })
+            */
             //area responsable
             pageActually.drawText("Responsable: ", {
                 x: 117,
@@ -762,12 +772,14 @@ const subir_pdf_extra = async (req, res, next) => {
                 size: fontsize,
                 font: font,
             })
+            /*
             pageActually.drawText(dataProyect.rows[0].r_version, {
                 x: 170,
                 y: height / 2 + 305,
                 size: fontsize,
                 font: font,
             })
+            */
             //fecha de publicacion
             pageActually.drawText("Fecha: ", {
                 x: 250,
@@ -1185,7 +1197,12 @@ const generar_lista_usuarios = async (req, res, next) => {
         //paguina para poner la enumeracion 
         var NumPag = (pDFTODO.getPages().length - pdfDocEncabezados.getPages().length) + 1;
         console.log("Paguina donde empieza la enumaracion: " + NumPag);
+        //consultar a la base de datos el encabezado del proyecto con el codigo y la version del proyecto 
+        const dataProyect = await pool.query('select * from pro_encabezado($1)', [id]);
+
         let fontsize = 10
+        const font = await pDFTODO.embedFont(StandardFonts.HelveticaBold);
+
         var numerototal = pDFTODO.getPages().length;
         for (i = 0; i < pDFTODO.getPages().length; i++) {
             var numero_paguina = i + 1;
@@ -1202,6 +1219,17 @@ const generar_lista_usuarios = async (req, res, next) => {
                     x: 300,
                     y: height / 2 + 305,
                     size: fontsize,
+                })
+                pageActually.drawText(dataProyect.rows[0].r_codigo, {
+                    x: 165,
+                    y: height / 2 + 345,
+                    size: fontsize
+                })
+                pageActually.drawText(dataProyect.rows[0].r_version, {
+                    x: 170,
+                    y: height / 2 + 305,
+                    size: fontsize,
+                    font: font,
                 })
             }
 
@@ -1238,6 +1266,7 @@ const subir_contraportada = async (req, res, next) => {
         return res.status(404).json({ message: error.message });
     }
 }
+
 //funcion para recibir un array buffer y convertirlo en pdf para el editor de texto
 const Convertir_Editor_a_pdf = async (req, res, next)=>{
     try {
@@ -1264,6 +1293,49 @@ const Convertir_Editor_a_pdf = async (req, res, next)=>{
         return res.status(404).json({ message: error.message });
     }
 } 
+
+//fucion para listar los proyectos publicados para realizarles reformas 
+const proyectos_publicados_para_reformas = async (req, res, next) => {
+    try {
+        const users = await pool.query('select * from proyectos_publicados_reformas()');
+        console.log(users);
+        return res.status(200).json(users.rows);
+    } catch (error) {
+        return res.status(404).json({ message: error.message });
+    }
+}
+//funcion para iniciar una reforma de algun proyecto y subir su alcance xdxdxd skere modo diablo
+let ipFileServerAlcance = "../../uploads/alcances/";
+const iniciar_reforma = async (req, res, next) => {
+    try {
+        const { id_proyecto } = req.body;
+        const { file } = req;
+        const { p_id_area_reforma } = req.body;
+        const { descripcion } = req.body;
+
+        const documento = `${ipFileServerAlcance}${file?.filename}`;
+        //let ext = path.extname(file);
+        console.log("Datos recibidos por el frontend");
+        console.log("Id proyecto" + id_proyecto);
+        console.log("p_id_area_reforma" + p_id_area_reforma);
+        console.log("descripcion" + descripcion);
+        console.log(documento);
+
+        //verificar que los datos sean ingresados de manera correcta sjsjs skere modo skere 
+        if (documento === '../../uploads/alcances/undefined')
+            return res.status(404).json({ message: "Documento no legible" });
+        //aqui enviar a la base de datos para que haga el proceso xdxd skere modo diablo
+        const users = await pool.query('call iniciar_reforma($1,$2,$3,$4)', [id_proyecto, documento, p_id_area_reforma, descripcion]);
+        console.log(users);
+        return res.status(200).json({ message: "Se realizó la reforma" });
+    } catch (error) {
+        console.log(error);
+        return res.status(404).json({ message: error.message });
+    }
+}
+
+
+
 
 module.exports = {
     crear_proyecto,
@@ -1308,5 +1380,8 @@ module.exports = {
     generar_lista_usuarios,
     ver_documentos_contraportadas,
     subir_contraportada,
-    Convertir_Editor_a_pdf
+    Convertir_Editor_a_pdf,
+    proyectos_publicados_para_reformas,
+    iniciar_reforma
+
 };
