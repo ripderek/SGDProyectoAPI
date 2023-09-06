@@ -7,8 +7,8 @@ const path = require('path');
 const puppeteer = require('puppeteer');
 var pdf = require("pdf-creator-node");
 
-//para editar el pdf i
-const { PDFDocument, rgb, StandardFonts } = require('pdf-lib');
+//para editar el pdf i y firmarlo
+const { PDFDocument, rgb, StandardFonts, PDFHexString, PDFArray, PDFSignature, PDFAcroSignature } = require('pdf-lib');
 const crear_proyecto = async (req, res, next) => {
     try {
         const { p_titulo, p_id_area, p_id_categoria, p_prefijo_proyecto } = req.body;
@@ -65,6 +65,7 @@ const subir_pdf = async (req, res, next) => {
         // const { width, height } = pdfDoc.getSize();
         let fontsize = 10
         //rectangulo xd 
+        const opacidad = 0.6
         const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
         //pages[0].drawText('PDF MODIFICADO BY RIP DEREK para el encabezado')
         for (i = 0; i < pdfDoc.getPages().length; i++) {
@@ -73,14 +74,7 @@ const subir_pdf = async (req, res, next) => {
             const pageActually = pages[i]
             const { width, height } = pageActually.getSize()
             //rectagulo princiapl 
-            pageActually.drawRectangle({
-                x: 12,
-                y: height / 2 + 320,
-                width: width - 36,
-                height: 80,
-                color: rgb(1, 1, 1),
-                borderWidth: 1.5,
-            })
+
             //rectagunlo para la foto de la empresa xd 
             pageActually.drawRectangle({
                 x: 12,
@@ -89,6 +83,8 @@ const subir_pdf = async (req, res, next) => {
                 height: 100,
                 color: rgb(1, 1, 1),
                 borderWidth: 1.5,
+                opacity: opacidad
+
             })
             //primer fila
             pageActually.drawRectangle({
@@ -98,6 +94,8 @@ const subir_pdf = async (req, res, next) => {
                 height: 20,
                 color: rgb(1, 1, 1),
                 borderWidth: 1.5,
+                opacity: opacidad
+
             })
             //segunda fila
             pageActually.drawRectangle({
@@ -107,6 +105,8 @@ const subir_pdf = async (req, res, next) => {
                 height: 20,
                 color: rgb(1, 1, 1),
                 borderWidth: 1.5,
+                opacity: opacidad
+
             })
             //tercer fila 
             pageActually.drawRectangle({
@@ -116,6 +116,18 @@ const subir_pdf = async (req, res, next) => {
                 height: 20,
                 color: rgb(1, 1, 1),
                 borderWidth: 1.5,
+                opacity: opacidad
+
+            })
+            pageActually.drawRectangle({
+                x: 113,
+                y: height / 2 + 320,
+                width: width - 137,
+                height: 20,
+                color: rgb(1, 1, 1),
+                borderWidth: 1.5,
+                opacity: opacidad
+
             })
             //cuarta fila 
             pageActually.drawRectangle({
@@ -125,6 +137,8 @@ const subir_pdf = async (req, res, next) => {
                 height: 20,
                 color: rgb(1, 1, 1),
                 borderWidth: 1.5,
+                opacity: opacidad
+
             })
             //aqui es donde tengo que crear la tabla con el encabezado y ponerla en el nuevo doc 
             //titulo del sistema
@@ -133,12 +147,16 @@ const subir_pdf = async (req, res, next) => {
                 y: height / 2 + 385,
                 size: fontsize,
                 font: font,
+                opacity: opacidad
+
             })
             //titulo del proyecto
             pageActually.drawText(dataProyect.rows[0].r_titulo, {
                 x: 117,
                 y: height / 2 + 365,
                 size: fontsize,
+                opacity: opacidad
+
 
             })
             //codigo del proyecto
@@ -148,6 +166,8 @@ const subir_pdf = async (req, res, next) => {
                 y: height / 2 + 345,
                 size: fontsize,
                 font: font,
+                opacity: opacidad
+
             })
             /*
             pageActually.drawText(dataProyect.rows[0].r_codigo, {
@@ -162,11 +182,15 @@ const subir_pdf = async (req, res, next) => {
                 y: height / 2 + 325,
                 size: fontsize,
                 font: font,
+                opacity: opacidad
+
             })
             pageActually.drawText(dataProyect.rows[0].r_area_responsable, {
                 x: 185,
                 y: height / 2 + 325,
-                size: fontsize
+                size: fontsize,
+                opacity: opacidad
+
             })
             //version del proyecto: 
             pageActually.drawText("Version: ", {
@@ -174,6 +198,8 @@ const subir_pdf = async (req, res, next) => {
                 y: height / 2 + 305,
                 size: fontsize,
                 font: font,
+                opacity: opacidad
+
             })
             //version del proyecto ya no se agrega al subir un pdf o un documento extra porque puede cambiar 
             //esto anadirlo cuando se prepare el documento
@@ -191,6 +217,8 @@ const subir_pdf = async (req, res, next) => {
                 y: height / 2 + 305,
                 size: fontsize,
                 font: font,
+                opacity: opacidad
+
             })
             //Numero de pagina
             pageActually.drawText("Pagina: ", {
@@ -198,6 +226,8 @@ const subir_pdf = async (req, res, next) => {
                 y: height / 2 + 305,
                 size: fontsize,
                 font: font,
+                opacity: opacidad
+
             })
             //dibujar la foto  de la empresa
             pageActually.drawImage(pngImage, {
@@ -205,6 +235,8 @@ const subir_pdf = async (req, res, next) => {
                 y: height / 2 + 302,
                 width: pngDims.width,
                 height: pngDims.height,
+                opacity: opacidad
+
             })
         }
         //hasta aqui
@@ -346,7 +378,6 @@ const ver_pdf_url = async (req, res) => {
         res.send(data);
     } catch (error) {
         return res.status(404).json({ message: error.message });
-
     }
 }
 const guias_proyectos = async (req, res, next) => {
@@ -664,6 +695,8 @@ const subir_pdf_extra = async (req, res, next) => {
         let fontsize = 10
         //rectangulo xd 
         const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+        const opacidad = 0.6
+
         //pages[0].drawText('PDF MODIFICADO BY RIP DEREK para el encabezado')
         for (i = 0; i < pdfDoc.getPages().length; i++) {
             //const pages = pdfDoc.getPages();
@@ -671,14 +704,7 @@ const subir_pdf_extra = async (req, res, next) => {
             const pageActually = pages[i]
             const { width, height } = pageActually.getSize()
             //rectagulo princiapl 
-            pageActually.drawRectangle({
-                x: 12,
-                y: height / 2 + 320,
-                width: width - 36,
-                height: 80,
-                color: rgb(1, 1, 1),
-                borderWidth: 1.5,
-            })
+
             //rectagunlo para la foto de la empresa xd 
             pageActually.drawRectangle({
                 x: 12,
@@ -687,6 +713,8 @@ const subir_pdf_extra = async (req, res, next) => {
                 height: 100,
                 color: rgb(1, 1, 1),
                 borderWidth: 1.5,
+                opacity: opacidad
+
             })
             //primer fila
             pageActually.drawRectangle({
@@ -696,6 +724,8 @@ const subir_pdf_extra = async (req, res, next) => {
                 height: 20,
                 color: rgb(1, 1, 1),
                 borderWidth: 1.5,
+                opacity: opacidad
+
             })
             //segunda fila
             pageActually.drawRectangle({
@@ -705,6 +735,8 @@ const subir_pdf_extra = async (req, res, next) => {
                 height: 20,
                 color: rgb(1, 1, 1),
                 borderWidth: 1.5,
+                opacity: opacidad
+
             })
             //tercer fila 
             pageActually.drawRectangle({
@@ -714,6 +746,18 @@ const subir_pdf_extra = async (req, res, next) => {
                 height: 20,
                 color: rgb(1, 1, 1),
                 borderWidth: 1.5,
+                opacity: opacidad
+
+            })
+            pageActually.drawRectangle({
+                x: 113,
+                y: height / 2 + 320,
+                width: width - 137,
+                height: 20,
+                color: rgb(1, 1, 1),
+                borderWidth: 1.5,
+                opacity: opacidad
+
             })
             //cuarta fila 
             pageActually.drawRectangle({
@@ -723,6 +767,8 @@ const subir_pdf_extra = async (req, res, next) => {
                 height: 20,
                 color: rgb(1, 1, 1),
                 borderWidth: 1.5,
+                opacity: opacidad
+
             })
             //aqui es donde tengo que crear la tabla con el encabezado y ponerla en el nuevo doc 
             //titulo del sistema
@@ -731,12 +777,15 @@ const subir_pdf_extra = async (req, res, next) => {
                 y: height / 2 + 385,
                 size: fontsize,
                 font: font,
+                opacity: opacidad
+
             })
             //titulo del proyecto
             pageActually.drawText(dataProyect.rows[0].r_titulo, {
                 x: 117,
                 y: height / 2 + 365,
                 size: fontsize,
+                opacity: opacidad
 
             })
             //codigo del proyecto
@@ -745,6 +794,8 @@ const subir_pdf_extra = async (req, res, next) => {
                 y: height / 2 + 345,
                 size: fontsize,
                 font: font,
+                opacity: opacidad
+
             })
             /*
             pageActually.drawText(dataProyect.rows[0].r_codigo, {
@@ -759,11 +810,15 @@ const subir_pdf_extra = async (req, res, next) => {
                 y: height / 2 + 325,
                 size: fontsize,
                 font: font,
+                opacity: opacidad
+
             })
             pageActually.drawText(dataProyect.rows[0].r_area_responsable, {
                 x: 185,
                 y: height / 2 + 325,
-                size: fontsize
+                size: fontsize,
+                opacity: opacidad
+
             })
             //version del proyecto: 
             pageActually.drawText("Version: ", {
@@ -771,6 +826,8 @@ const subir_pdf_extra = async (req, res, next) => {
                 y: height / 2 + 305,
                 size: fontsize,
                 font: font,
+                opacity: opacidad
+
             })
             /*
             pageActually.drawText(dataProyect.rows[0].r_version, {
@@ -786,6 +843,8 @@ const subir_pdf_extra = async (req, res, next) => {
                 y: height / 2 + 305,
                 size: fontsize,
                 font: font,
+                opacity: opacidad
+
             })
             //Numero de pagina
             pageActually.drawText("Pagina: ", {
@@ -793,6 +852,8 @@ const subir_pdf_extra = async (req, res, next) => {
                 y: height / 2 + 305,
                 size: fontsize,
                 font: font,
+                opacity: opacidad
+
             })
             //dibujar la foto  de la empresa
             pageActually.drawImage(pngImage, {
@@ -800,6 +861,8 @@ const subir_pdf_extra = async (req, res, next) => {
                 y: height / 2 + 302,
                 width: pngDims.width,
                 height: pngDims.height,
+                opacity: opacidad
+
             })
         }
         //hasta aqui
@@ -1202,6 +1265,7 @@ const generar_lista_usuarios = async (req, res, next) => {
 
         let fontsize = 10
         const font = await pDFTODO.embedFont(StandardFonts.HelveticaBold);
+        const opacidad = 0.6
 
         var numerototal = pDFTODO.getPages().length;
         for (i = 0; i < pDFTODO.getPages().length; i++) {
@@ -1214,22 +1278,30 @@ const generar_lista_usuarios = async (req, res, next) => {
                     x: 460,
                     y: height / 2 + 305,
                     size: fontsize,
+                    opacity: opacidad
+
                 })
                 pageActually.drawText(Mes + " " + Anio.toString(), {
                     x: 300,
                     y: height / 2 + 305,
                     size: fontsize,
+                    opacity: opacidad
+
                 })
                 pageActually.drawText(dataProyect.rows[0].r_codigo, {
                     x: 165,
                     y: height / 2 + 345,
-                    size: fontsize
+                    size: fontsize,
+                    opacity: opacidad
+
                 })
                 pageActually.drawText(dataProyect.rows[0].r_version, {
                     x: 170,
                     y: height / 2 + 305,
                     size: fontsize,
                     font: font,
+                    opacity: opacidad
+
                 })
             }
 
@@ -1268,17 +1340,17 @@ const subir_contraportada = async (req, res, next) => {
 }
 
 //funcion para recibir un array buffer y convertirlo en pdf para el editor de texto
-const Convertir_Editor_a_pdf = async (req, res, next)=>{
+const Convertir_Editor_a_pdf = async (req, res, next) => {
     try {
-        const {jsPDF} = require('jspdf');
+        const { jsPDF } = require('jspdf');
 
-        const {id_proyecto, array_buffer} = req.body;
-        const doc = new  jsPDF({
+        const { id_proyecto, array_buffer } = req.body;
+        const doc = new jsPDF({
             orientation: "portrait",
             unit: "mm",
             format: "a4",
-          });
-          console.log("Este es el array buffer del pdf "+array_buffer)
+        });
+        console.log("Este es el array buffer del pdf " + array_buffer)
         // Convierte el buffer recibido en un formato Uint8Array
         const uint8Array = new Uint8Array(array_buffer);
         // Carga el contenido Uint8Array en el documento jsPDF
@@ -1292,7 +1364,7 @@ const Convertir_Editor_a_pdf = async (req, res, next)=>{
         console.log(error)
         return res.status(404).json({ message: error.message });
     }
-} 
+}
 
 //fucion para listar los proyectos publicados para realizarles reformas 
 const proyectos_publicados_para_reformas = async (req, res, next) => {
@@ -1334,8 +1406,92 @@ const iniciar_reforma = async (req, res, next) => {
     }
 }
 
+//funcion para firmar documentos electronicamente 
+//const { PDFDocument, PDFHexString, PDFArray, } = require('pdf-lib');
+//const { PDFDocument, rgb, StandardFonts } = require('pdf-lib');
+const forge = require('node-forge'); // Librería para trabajar con P12
+const signer = require('node-signpdf');
+
+const firmar_documento_p12 = async (req, res, next) => {
+    try {
+        /*
+        // Ruta al archivo PDF que deseas firmar
+        const pdfFilePath = path.join(__dirname, 'AVAL Docente.pdf');
+        //contra del .p12 --> Veliz1234@
+        // Ruta al archivo P12
+        const p12FilePath = path.join(__dirname, '_JINA RUTH VELIZ MENDEZ 200323182939.p12');
+        const p12Password = 'Veliz1234@';
+
+        //verificar los archivos 
 
 
+        // Cargar el archivo P12 utilizando la librería node-forge-p12
+        const p12Buffer = fs.readFileSync(p12FilePath);
+        //const p12 = new P12(p12Buffer, p12Password);
+        const p12Asn1 = fs.readFileSync(p12FilePath, 'binary');
+        var p12Asn2 = forge.asn1.fromDer(p12Asn1);
+        var p12 = forge.pkcs12.pkcs12FromAsn1(p12Asn2, p12Password);
+        var certBags = p12.getBags({ bagType: forge.pki.oids.certBag });
+        var pkeyBags = p12.getBags({ bagType: forge.pki.oids.pkcs8ShroudedKeyBag });
+
+        // Verifica si puedes obtener información del certificado y la clave privada
+        console.log('Certificado:', p12);
+        console.log('certBags:', certBags);
+        console.log('pkeyBags:', pkeyBags);
+
+
+        // Crear un nuevo objeto PDFDocument
+        const pdfBytes = fs.readFileSync(pdfFilePath);
+        signer.SignPdf
+        const pdfDoc = await PDFDocument.load(pdfBytes);
+        const signedPdf = new signer.SignPdf(
+            fs.readFileSync(path.join(__dirname, 'AVAL Docente.pdf')),
+            fs.readFileSync(path.join(__dirname, '_JINA RUTH VELIZ MENDEZ 200323182939.p12')),
+
+        );
+
+        console.log(signedPdf);
+            */
+
+        //PROBANDO CON EL SCRIPT DE PYTHON PORQUE ESTA WEBADA NO FUNCIONA EN NODE JS
+        const { PythonShell } = require('python-shell');
+
+        // Configura las opciones para la ejecución del script Python
+        const options = {
+            mode: 'text',
+            pythonOptions: ['-u'], // Deshabilita el almacenamiento en búfer de la salida
+            scriptPath: __dirname, // Ruta al directorio del script Python
+            args: ['funcion_a'] // Nombre de la función de Python que deseas llamar
+        };
+
+        // Crea una instancia de PythonShell con las opciones
+        const pythonShell = new PythonShell('primer.py', options);
+
+        // Escucha la salida del script Python
+        pythonShell.on('message', (message) => {
+            console.log(`Salida de la función de Python: ${message}`);
+        });
+
+        // Maneja cualquier error que ocurra durante la ejecución del script Python
+        pythonShell.on('error', (err) => {
+            console.error('Error al ejecutar el script de Python:', err);
+        });
+
+        // Finaliza la instancia de PythonShell cuando termine
+        pythonShell.end((err, code, signal) => {
+            if (err) {
+                console.error('Error al finalizar el script de Python:', err);
+            }
+            console.log('Script de Python finalizado con código de salida', code);
+        });
+
+
+        return res.status(200).json("Se firmo el documento mediante el p12");
+    } catch (error) {
+        console.log(error);
+        return res.status(404).json({ message: error.message });
+    }
+}
 
 module.exports = {
     crear_proyecto,
@@ -1382,6 +1538,7 @@ module.exports = {
     subir_contraportada,
     Convertir_Editor_a_pdf,
     proyectos_publicados_para_reformas,
-    iniciar_reforma
+    iniciar_reforma,
+    firmar_documento_p12
 
 };
