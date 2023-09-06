@@ -1334,7 +1334,35 @@ const iniciar_reforma = async (req, res, next) => {
     }
 }
 
+//Para cargar las veriones que tiene ese proyectto en el combobox
+const ver_proyectos_publicados_versiones= async (req, res, next) => {
+    try {
+        const { idproyecto } = req.params;
+        const users = await pool.query('select * from list_combobox_version($1)', [idproyecto]);
+        return res.status(200).json(users.rows);
+    } catch (error) {
+        console.log(error);
+        return res.status(404).json({ message: error.message });
+    }
+}
 
+//Ver pdf solo enviar la URL del doc
+const ver_pdf_url_version = async (req, res) => {
+    try {
+        const { id } = req.params;
+        //console.log(id);
+        const users = await pool.query('select * from Ver_Documento_version($1)', [id]);
+        const urlArchivos = path.join(__dirname, "../" + users.rows[0].r_url_doc)
+        //console.log(users.rows[0].r_url_doc);
+        var data = fs.readFileSync(urlArchivos);
+        console.log(data);
+        res.contentType("application/pdf");
+        res.send(data);
+    } catch (error) {
+        return res.status(404).json({ message: error.message });
+
+    }
+}
 
 
 module.exports = {
@@ -1382,6 +1410,8 @@ module.exports = {
     subir_contraportada,
     Convertir_Editor_a_pdf,
     proyectos_publicados_para_reformas,
-    iniciar_reforma
+    iniciar_reforma,
+    ver_proyectos_publicados_versiones,
+    ver_pdf_url_version
 
 };
