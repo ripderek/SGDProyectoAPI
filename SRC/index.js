@@ -6,11 +6,11 @@ const http = require('http');
 const { Server } = require('socket.io');
 
 
-const Connection = require ('./db_m.js');
+const Connection = require('./db_m.js');
 const { saveDocument, getDocumentContent } = require("./controllers/Document/document-controller.js");
-const Delta = require ('quill-delta');
+const Delta = require('quill-delta');
 
-  
+
 //Este middleware se ejecuta antes de entrar a una ruta protegida, es decir, se necesita un token valido para acceder
 const { authenticateToken } = require('./middleware/authorization.js');
 
@@ -32,9 +32,15 @@ dotenv.config();
 
 //Consfigurar el puerto donde se va abrir la API
 const app = express();
+
 const PORT = 4000;
 //http://192.168.56.1:3000
+//const corsOptions = { credentials: true, origin: "http://localhost:3000" };
+//https://z8zbh18v-3000.use2.devtunnels.ms/
+//const corsOptions = { credentials: true, origin: "https://z8zbh18v-3000.use2.devtunnels.ms" };
 const corsOptions = { credentials: true, origin: "http://localhost:3000" };
+
+
 
 app.use(cors(corsOptions));
 app.use(express.json());
@@ -78,7 +84,7 @@ const connectedUsers = {};
 io.on("connection", (socket) => {
   let id_proyecto; // Variable para almacenar el ID del proyecto
 
-  socket.on("join-room",async  (_id_proyecto) => {
+  socket.on("join-room", async (_id_proyecto) => {
     id_proyecto = _id_proyecto; // Almacena el ID del proyecto en la variable
     socket.join(id_proyecto);
     // Obtener el contenido del documento desde MongoDB
@@ -93,14 +99,14 @@ io.on("connection", (socket) => {
 
     io.to(id_proyecto).emit("user-count", connectedUsers[id_proyecto].length);
   });
-  socket.on("send-changes",async (data) => {  
-  const { id_proyecto, content,delta } = data; // Cambio aquí: recibir el contenido completo
-  socket.to(id_proyecto).emit("receive-changes", delta); // Cambio aquí: enviar el contenido completo
-  try {
-    await saveDocument(id_proyecto, content); // Cambio aquí: guardar el contenido completo
-  } catch (error) {
-    console.error("Error saving document:", error);
-  }
+  socket.on("send-changes", async (data) => {
+    const { id_proyecto, content, delta } = data; // Cambio aquí: recibir el contenido completo
+    socket.to(id_proyecto).emit("receive-changes", delta); // Cambio aquí: enviar el contenido completo
+    try {
+      await saveDocument(id_proyecto, content); // Cambio aquí: guardar el contenido completo
+    } catch (error) {
+      console.error("Error saving document:", error);
+    }
   });
 
   socket.on("typing", ({ id_proyecto, nombre }) => {

@@ -115,8 +115,8 @@ const datos_Usuarios = async (req, res, next) => {
 //Listas los uarios usando la paginacion
 const all_data_users = async (req, res, next) => {
     try {
-        const {pag} = req.params;
-        const users = await pool.query('select * from users_paginacion($1)',[pag]);
+        const { pag } = req.params;
+        const users = await pool.query('select * from users_paginacion($1)', [pag]);
         console.log(users);
         return res.status(200).json(users.rows);
     } catch (error) {
@@ -175,6 +175,7 @@ const cambiar_foto = async (req, res, next) => {
         console.log(id_user + foto);
         return res.status(200).json({ message: "Se cambio la foto" });
     } catch (error) {
+        console.log(error);
         return res.status(404).json({ message: error.constraint });
     }
 }
@@ -209,9 +210,7 @@ const actualizar_contrasena_admin = async (req, res, next) => {
     try {
         const { contra_nueva, contra_nueva1, id } = req.body;
         if (contra_nueva === contra_nueva1) {
-
             const users = await pool.query('call Cambiar_Contra_admin($1,$2)', [contra_nueva, id]);
-
             return res.status(200).json({ message: "Se edito el usuario" });
         } else {
             return res.status(404).json({ message: "Las contrasenas no coinciden" });
@@ -333,7 +332,7 @@ const recuperar_cuenta = async (req, res, next) => {
         const secret = JWT_SECRET + correo;
         const payload = {
             email: correo,
-            ucontra : contra_user
+            ucontra: contra_user
         };
         const token = jwt.sign(payload, secret, { expiresIn: '5m' });
         //const encodedToken = encodeURIComponent(token);
@@ -412,15 +411,15 @@ const recuperar_cuenta_contrasena = async (req, res, next) => {
             const secret2 = JWT_SECRET + correo;
             const payload2 = jwt.verify(tokena, secret2);
 
-            if(contra1 === payload2.ucontra){
+            if (contra1 === payload2.ucontra) {
                 return res.status(404).json({ message: "Ingrese otra contraseña por favor" });
             }
 
             // consultar la contraseña actual, la cambiada 
             const users2 = await pool.query('select * from contra_user_token($1)', [correo]);
             const contra_user = users2.rows[0].contrat;
-            console.log('nueva',contra_user);
-            console.log('vieja',payload2.ucontra);
+            console.log('nueva', contra_user);
+            console.log('vieja', payload2.ucontra);
 
 
             //Comparar la contraseña que saco aqui con la que pase por el token.

@@ -1,7 +1,5 @@
 const jwt = require('jsonwebtoken');
 
-
-
 function authenticateToken(req, res, next) {
     const { myTokenName } = req.cookies;
     if (myTokenName == null) return res.status(401).json({ error: "Null Token" });

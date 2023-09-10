@@ -1423,35 +1423,7 @@ const firmar_documento_p12 = async (req, res, next) => {
         const p12FilePath = path.join(__dirname, '_JINA RUTH VELIZ MENDEZ 200323182939.p12');
         const p12Password = 'Veliz1234@';
 
-//Para cargar las veriones que tiene ese proyectto en el combobox
-const ver_proyectos_publicados_versiones= async (req, res, next) => {
-    try {
-        const { idproyecto } = req.params;
-        const users = await pool.query('select * from list_combobox_version($1)', [idproyecto]);
-        return res.status(200).json(users.rows);
-    } catch (error) {
-        console.log(error);
-        return res.status(404).json({ message: error.message });
-    }
-}
 
-//Ver pdf solo enviar la URL del doc
-const ver_pdf_url_version = async (req, res) => {
-    try {
-        const { id } = req.params;
-        //console.log(id);
-        const users = await pool.query('select * from Ver_Documento_version($1)', [id]);
-        const urlArchivos = path.join(__dirname, "../" + users.rows[0].r_url_doc)
-        //console.log(users.rows[0].r_url_doc);
-        var data = fs.readFileSync(urlArchivos);
-        console.log(data);
-        res.contentType("application/pdf");
-        res.send(data);
-    } catch (error) {
-        return res.status(404).json({ message: error.message });
-
-    }
-}
 
         //verificar los archivos 
 
@@ -1521,6 +1493,36 @@ const ver_pdf_url_version = async (req, res) => {
     } catch (error) {
         console.log(error);
         return res.status(404).json({ message: error.message });
+    }
+}
+
+//Para cargar las veriones que tiene ese proyectto en el combobox
+const ver_proyectos_publicados_versiones = async (req, res, next) => {
+    try {
+        const { idproyecto } = req.params;
+        const users = await pool.query('select * from list_combobox_version($1)', [idproyecto]);
+        return res.status(200).json(users.rows);
+    } catch (error) {
+        console.log(error);
+        return res.status(404).json({ message: error.message });
+    }
+}
+
+//Ver pdf solo enviar la URL del doc
+const ver_pdf_url_version = async (req, res) => {
+    try {
+        const { id } = req.params;
+        //console.log(id);
+        const users = await pool.query('select * from Ver_Documento_version($1)', [id]);
+        const urlArchivos = path.join(__dirname, "../" + users.rows[0].r_url_doc)
+        //console.log(users.rows[0].r_url_doc);
+        var data = fs.readFileSync(urlArchivos);
+        console.log(data);
+        res.contentType("application/pdf");
+        res.send(data);
+    } catch (error) {
+        return res.status(404).json({ message: error.message });
+
     }
 }
 
