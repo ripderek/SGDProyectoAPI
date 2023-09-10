@@ -1406,6 +1406,9 @@ const iniciar_reforma = async (req, res, next) => {
     }
 }
 
+
+
+
 //Para cargar las veriones que tiene ese proyectto en el combobox
 const ver_proyectos_publicados_versiones= async (req, res, next) => {
     try {
@@ -1433,8 +1436,6 @@ const ver_pdf_url_version = async (req, res) => {
     } catch (error) {
         return res.status(404).json({ message: error.message });
 
-    }
-}
 
 
 //funcion para firmar documentos electronicamente 
@@ -1536,6 +1537,7 @@ const ver_docs_alcance= async (req, res) => {
     }
 }
 
+
 //Funcion para cargar el pdf del alcance si es reforma
 const ver_pdf_alcance= async (req, res) => {
     try {
@@ -1553,7 +1555,6 @@ const ver_pdf_alcance= async (req, res) => {
 
     }
 }
-
 
 module.exports = {
     crear_proyecto,

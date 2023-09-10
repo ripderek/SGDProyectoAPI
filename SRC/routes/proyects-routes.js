@@ -63,8 +63,8 @@ router.post('/FirmarPDF', firmar_documento_p12);
 
 
 //Ver Proyectos Publicados versiones
-router.get('/LisComboBox/:idproyecto',ver_proyectos_publicados_versiones);
-router.get('/VerPdfUrlVersiones/:id',ver_pdf_url_version);
+router.get('/LisComboBox/:idproyecto', ver_proyectos_publicados_versiones);
+router.get('/VerPdfUrlVersiones/:id', ver_pdf_url_version);
 
 //Ver el alcace en la reforma
 router.get('/Ver_Alcance/:id',ver_docs_alcance);
