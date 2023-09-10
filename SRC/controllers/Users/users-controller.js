@@ -451,6 +451,18 @@ const recuperar_cuenta_contrasena = async (req, res, next) => {
 }
 
 
+const rol_usuario = async (req, res, next) => {
+    try {
+        const { idu, p_id_proyecto, p_id_area} = req.body;
+
+        const users = await pool.query('select * from user_data_rol($1,$2,$3)', [idu,p_id_proyecto,p_id_area]);
+        console.log(users);
+        return res.status(200).json(users.rows[0]);
+    } catch (error) {
+        return res.status(404).json({ message: error.message });
+    }
+}
+
 module.exports = {
     crear_usuario,
     modificar_usuario,
@@ -466,5 +478,6 @@ module.exports = {
     modificar_usuario_not_admin,
     recuperar_cuenta,
     recuperar_cuenta_contrasena,
-    total_pag_users
+    total_pag_users,
+    rol_usuario
 };
