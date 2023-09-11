@@ -290,8 +290,9 @@ const proyectos_areas = async (req, res, next) => {
     try {
         const { id } = req.params;
         const { id2 } = req.params;
+        const {id3} = req.params;
 
-        const users = await pool.query('select * from proyectos_areas($1,$2)', [id, id2]);
+        const users = await pool.query('select * from proyectos_areas($1,$2,$3)', [id, id2,id3]);
         console.log(users);
         return res.status(200).json(users.rows);
     } catch (error) {
@@ -1410,7 +1411,7 @@ const iniciar_reforma = async (req, res, next) => {
 
 
 //Para cargar las veriones que tiene ese proyectto en el combobox
-const ver_proyectos_publicados_versiones= async (req, res, next) => {
+const ver_proyectos_publicados_versiones = async (req, res, next) => {
     try {
         const { idproyecto } = req.params;
         const users = await pool.query('select * from list_combobox_version($1)', [idproyecto]);
@@ -1435,7 +1436,8 @@ const ver_pdf_url_version = async (req, res) => {
         res.send(data);
     } catch (error) {
         return res.status(404).json({ message: error.message });
-
+    }
+}
 
 
 //funcion para firmar documentos electronicamente 
@@ -1526,7 +1528,7 @@ const firmar_documento_p12 = async (req, res, next) => {
 }
 
 //Funcion para cargar los datos del alcance si es reforma
-const ver_docs_alcance= async (req, res) => {
+const ver_docs_alcance = async (req, res) => {
     try {
         const { id } = req.params;
         const users = await pool.query('select * from ver_docs_alcance($1)', [id]);
@@ -1539,7 +1541,7 @@ const ver_docs_alcance= async (req, res) => {
 
 
 //Funcion para cargar el pdf del alcance si es reforma
-const ver_pdf_alcance= async (req, res) => {
+const ver_pdf_alcance = async (req, res) => {
     try {
         const { id } = req.params;
         //console.log(id);
@@ -1553,6 +1555,40 @@ const ver_pdf_alcance= async (req, res) => {
     } catch (error) {
         return res.status(404).json({ message: error.message });
 
+    }
+}
+
+//Funcion para guardar el pdf que genera el editor en la API
+const guardar_pdf_editor = async (req, res) => {
+    try {
+        // El archivo PDF se ha cargado con éxito, y su ruta se encuentra en req.file.path
+        const pdfFilePath = req.file.path;
+
+        // Aquí guardar pdfFilePath en la BD, que es la ruta
+        console.log("Ruta donde se guardo pdf editor",pdfFilePath);
+
+        // Devuelve una respuesta con la ruta del archivo almacenado
+        return res.status(200).json({ filePath: pdfFilePath });
+    } catch (error) {
+        console.error('Error al guardar el archivo PDF:', error);
+        return res.status(404).json({ message: error.message }); 
+    }
+}
+
+//Funcion para guardar el pdf que genera la firma en la API
+const guardar_pdf_firma = async (req, res) => {
+    try {
+        // El archivo PDF se ha cargado con éxito, y su ruta se encuentra en req.file.path
+        const pdfFilePath = req.file.path;
+
+        // Aquí guardar pdfFilePath en la BD, que es la ruta
+        console.log("Ruta donde se guardo pdf editor",pdfFilePath);
+
+        // Devuelve una respuesta con la ruta del archivo almacenado
+        return res.status(200).json({ filePath: pdfFilePath });
+    } catch (error) {
+        console.error('Error al guardar el archivo PDF:', error);
+        return res.status(404).json({ message: error.message }); 
     }
 }
 
@@ -1606,5 +1642,7 @@ module.exports = {
     ver_proyectos_publicados_versiones,
     ver_pdf_url_version,
     ver_docs_alcance,
-    ver_pdf_alcance
+    ver_pdf_alcance,
+    guardar_pdf_editor,
+    guardar_pdf_firma
 };
