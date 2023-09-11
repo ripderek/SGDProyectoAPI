@@ -188,7 +188,6 @@ const cambiar_foto = async (req, res, next) => {
 
         return res.status(200).json({ message: "Se cambio la foto" });
     } catch (error) {
-        console.log(error);
         return res.status(404).json({ message: error.message });
     }
 }
@@ -202,6 +201,7 @@ const deshabilitar_usuario_area = async (req, res, next) => {
 
         return res.status(200).json({ message: "Se expuls'o al usuario del area" });
     } catch (error) {
+        console.log("Erroraqui ");
         console.log(error);
         return res.status(404).json({ message: error.message });
     }
@@ -259,6 +259,19 @@ const areas_admin_user = async (req, res, next) => {
         return res.status(404).json({ message: error.message });
     }
 }
+//funcion que retornar el nombre del area y el prefijo para poderlos editar skere modo diablo 
+const datos_a_editar = async (req, res, next) => {
+    try {
+        //agregar un usuario a un area
+        const { id } = req.params;
+        const data_area = await pool.query('select * from datos_editar_area($1)', [id]);
+        console.log(data_area.rows);
+        return res.status(200).json(data_area.rows[0]);
+    } catch (error) {
+        console.log(error);
+        next(error)
+    }
+}
 module.exports = {
     crear_area,
     all_data_area,
@@ -277,5 +290,6 @@ module.exports = {
     cambiar_rol_usuario_admin,
     areas_para_flujos,
     data_area_i,
-    areas_admin_user
+    areas_admin_user,
+    datos_a_editar
 };
