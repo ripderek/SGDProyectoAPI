@@ -12,6 +12,11 @@ const { PDFDocument, rgb, StandardFonts, PDFHexString, PDFArray, PDFSignature, P
 const crear_proyecto = async (req, res, next) => {
     try {
         const { p_titulo, p_id_area, p_id_categoria, p_prefijo_proyecto } = req.body;
+
+        if (!p_id_categoria)
+            return res.status(404).json({ message: "Seleccione una categoria" });
+
+
         const users = await pool.query('call crear_proyecto($1,$2,$3,$4)', [p_titulo, p_id_area, p_id_categoria, p_prefijo_proyecto]);
         console.log(users);
         return res.status(200).json({ message: "Se creo el proyecto" });
@@ -405,6 +410,8 @@ const subir_guia = async (req, res, next) => {
         console.log(extension);
         console.log(ext);
         console.log("aqui se envia el archivo");
+        if (!descripcion) return res.status(404).json({ message: "Descripcion no puede ser vacio" });
+
         const users = await pool.query('call subir_guia($1,$2,$3,$4)', [documento, id, extension, descripcion]);
         console.log(users);
         return res.status(200).json({ message: "se subio el archivo" });
@@ -1410,7 +1417,7 @@ const iniciar_reforma = async (req, res, next) => {
 
 
 //Para cargar las veriones que tiene ese proyectto en el combobox
-const ver_proyectos_publicados_versiones= async (req, res, next) => {
+const ver_proyectos_publicados_versiones = async (req, res, next) => {
     try {
         const { idproyecto } = req.params;
         const users = await pool.query('select * from list_combobox_version($1)', [idproyecto]);
@@ -1434,7 +1441,9 @@ const ver_pdf_url_version = async (req, res) => {
         res.contentType("application/pdf");
         res.send(data);
     } catch (error) {
-        return res.status(404).json({ message: error.message });
+        return res.status(404).json({ message: error.message })
+    }
+};
 
 
 
@@ -1453,10 +1462,10 @@ const firmar_documento_p12 = async (req, res, next) => {
         // Ruta al archivo P12
         const p12FilePath = path.join(__dirname, '_JINA RUTH VELIZ MENDEZ 200323182939.p12');
         const p12Password = 'Veliz1234@';
-
+ 
         //verificar los archivos 
-
-
+ 
+ 
         // Cargar el archivo P12 utilizando la librería node-forge-p12
         const p12Buffer = fs.readFileSync(p12FilePath);
         //const p12 = new P12(p12Buffer, p12Password);
@@ -1465,13 +1474,13 @@ const firmar_documento_p12 = async (req, res, next) => {
         var p12 = forge.pkcs12.pkcs12FromAsn1(p12Asn2, p12Password);
         var certBags = p12.getBags({ bagType: forge.pki.oids.certBag });
         var pkeyBags = p12.getBags({ bagType: forge.pki.oids.pkcs8ShroudedKeyBag });
-
+ 
         // Verifica si puedes obtener información del certificado y la clave privada
         console.log('Certificado:', p12);
         console.log('certBags:', certBags);
         console.log('pkeyBags:', pkeyBags);
-
-
+ 
+ 
         // Crear un nuevo objeto PDFDocument
         const pdfBytes = fs.readFileSync(pdfFilePath);
         signer.SignPdf
@@ -1479,9 +1488,9 @@ const firmar_documento_p12 = async (req, res, next) => {
         const signedPdf = new signer.SignPdf(
             fs.readFileSync(path.join(__dirname, 'AVAL Docente.pdf')),
             fs.readFileSync(path.join(__dirname, '_JINA RUTH VELIZ MENDEZ 200323182939.p12')),
-
+ 
         );
-
+ 
         console.log(signedPdf);
             */
 
@@ -1526,7 +1535,7 @@ const firmar_documento_p12 = async (req, res, next) => {
 }
 
 //Funcion para cargar los datos del alcance si es reforma
-const ver_docs_alcance= async (req, res) => {
+const ver_docs_alcance = async (req, res) => {
     try {
         const { id } = req.params;
         const users = await pool.query('select * from ver_docs_alcance($1)', [id]);
@@ -1539,7 +1548,7 @@ const ver_docs_alcance= async (req, res) => {
 
 
 //Funcion para cargar el pdf del alcance si es reforma
-const ver_pdf_alcance= async (req, res) => {
+const ver_pdf_alcance = async (req, res) => {
     try {
         const { id } = req.params;
         //console.log(id);
@@ -1553,6 +1562,18 @@ const ver_pdf_alcance= async (req, res) => {
     } catch (error) {
         return res.status(404).json({ message: error.message });
 
+    }
+}
+//funcion para editar los datos de un proyecto, como el titulo, prefijo y su visibilidad
+const editar_proyecto = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const { p_titulo, p_prefijo_nuevo, p_visibilidad } = req.body;
+        const users = await pool.query('call editar_proyecto_datos($1,$2,$3,$4)', [p_titulo, p_prefijo_nuevo, id, p_visibilidad]);
+        console.log(users);
+        return res.status(200).json({ message: "Se actualizó los datos del proyecto" });
+    } catch (error) {
+        return res.status(404).json({ message: error.message });
     }
 }
 
