@@ -1570,13 +1570,22 @@ const editar_proyecto = async (req, res, next) => {
         const { id } = req.params;
         const { p_titulo, p_prefijo_nuevo, p_visibilidad } = req.body;
         const users = await pool.query('call editar_proyecto_datos($1,$2,$3,$4)', [p_titulo, p_prefijo_nuevo, id, p_visibilidad]);
-        console.log(users);
         return res.status(200).json({ message: "Se actualizó los datos del proyecto" });
     } catch (error) {
         return res.status(404).json({ message: error.message });
     }
 }
-
+//funcino que retorna los datos a editar xd 
+const datos_a_editar_proyecto = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const users = await pool.query('select * from datos_a_editar_proyecto($1)', [id]);
+        console.log(users);
+        return res.status(200).json(users.rows[0]);
+    } catch (error) {
+        return res.status(404).json({ message: error.message });
+    }
+}
 module.exports = {
     crear_proyecto,
     crear_categoria,
@@ -1627,5 +1636,7 @@ module.exports = {
     ver_proyectos_publicados_versiones,
     ver_pdf_url_version,
     ver_docs_alcance,
-    ver_pdf_alcance
+    ver_pdf_alcance,
+    editar_proyecto,
+    datos_a_editar_proyecto
 };
