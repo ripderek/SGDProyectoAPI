@@ -22,9 +22,9 @@ const areaRoutes = require('./routes/area-routes.js');
 const proyectsRoutes = require('./routes/proyects-routes.js');
 const empresaRoutes = require('./routes/empresa-routes.js');
 const publicRoutes = require('./routes/public-routes.js');
-//----------------NUEVO-----------------------
 const googleRoutes = require("./routes/google-routes.js");
 const flujoRoutes = require('./routes/flujo-routes.js');
+const firmaRoutes = require('./routes/firmas-routes.js');
 const { Socket } = require('dgram');
 
 //config entorno
@@ -52,10 +52,11 @@ app.use(cookieParser());
 app.use('/api/auth', authRoutes);
 //acceso publico 
 app.use('/api/public', publicRoutes);
-//----------NUEVO-----------------------------------------
+//inicio con google
 app.use('/api/authgoogle', googleRoutes);
-//----------NUEVO-----------------------------------------
 
+//Prueba con las firmas
+app.use('/api/firma', firmaRoutes);
 
 //rutas protegidas con middleare, es decir, se necesita un token valido para acceder
 app.use('/api/user', authenticateToken, userRoutes);

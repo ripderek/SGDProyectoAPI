@@ -1,4 +1,4 @@
-// NUEVO--------------------------------------------
+
 const pool = require('../../db');
 const jwt = require('jsonwebtoken');
 const { serialize } = require('cookie');
@@ -66,4 +66,3 @@ module.exports = {
     verificaUserGoogle,
 };
 
-// NUEVO--------------------------------------------
