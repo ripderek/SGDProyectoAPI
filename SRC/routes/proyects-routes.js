@@ -3,7 +3,7 @@ const router = Router();
 
 
 
-const { crear_proyecto, crear_categoria, proyectos_areas, all_categorias, roles_proyecto, subir_pdf, documentos_proyectos, ver_pdf, list_categorias, editar_categoria, estado_categoria, guias_proyectos, subir_guia, download_guia, ver_flujo_proyecto, borradores_proyecto, proyect_data, niveles_estado, ver_flujo_proyecto_nivel2, subir_primer_nivel, id_doc, subir_level, publicar_doc, deshabilitar_flujo, rechazar_proyecto, historial_proyecto, ver_flujo_rechazado, ver_flujo_historial, ver_documentos_extras, ver_pdf_url, subir_pdf_extra, combinar_pdfs, ver_pdf_2, participantes_actuales_proyecto, participantes_sin_proyectos, agregar_usuario_proyecto, expulsar_usuario_proyecto, generar_caratula, generar_lista_usuarios, ver_documentos_contraportadas, subir_contraportada, Convertir_Editor_a_pdf, proyectos_publicados_para_reformas, iniciar_reforma, ver_proyectos_publicados_versiones, ver_pdf_url_version, firmar_documento_p12, ver_docs_alcance, ver_pdf_alcance, editar_proyecto, datos_a_editar_proyecto ,guardar_pdf_editor} = require('../controllers/Proyects/proyects-controller');
+const { crear_proyecto, crear_categoria, proyectos_areas, all_categorias, roles_proyecto, subir_pdf, documentos_proyectos, ver_pdf, list_categorias, editar_categoria, estado_categoria, guias_proyectos, subir_guia, download_guia, ver_flujo_proyecto, borradores_proyecto, proyect_data, niveles_estado, ver_flujo_proyecto_nivel2, subir_primer_nivel, id_doc, subir_level, publicar_doc, deshabilitar_flujo, rechazar_proyecto, historial_proyecto, ver_flujo_rechazado, ver_flujo_historial, ver_documentos_extras, ver_pdf_url, subir_pdf_extra, combinar_pdfs, ver_pdf_2, participantes_actuales_proyecto, participantes_sin_proyectos, agregar_usuario_proyecto, expulsar_usuario_proyecto, generar_caratula, generar_lista_usuarios, ver_documentos_contraportadas, subir_contraportada, Convertir_Editor_a_pdf, proyectos_publicados_para_reformas, iniciar_reforma, ver_proyectos_publicados_versiones, ver_pdf_url_version, firmar_documento_p12, ver_docs_alcance, ver_pdf_alcance, editar_proyecto, datos_a_editar_proyecto, guardar_pdf_editor, datos_revision_proyecto, documentos_por_firmar } = require('../controllers/Proyects/proyects-controller');
 
 
 const { upload } = require('../middleware/multer_pdf');
@@ -77,5 +77,7 @@ router.get('/DatosEditar/:id', datos_a_editar_proyecto);
 
 //Para guardar el pdf generado en el editor de texto en la APi
 router.post('/guardar_pdf_editor', upload_editor.single('file'), guardar_pdf_editor);
+router.get('/datos_revision/:id/:id2', datos_revision_proyecto);
 
+router.get('/DocumentosporFirmar/:id', documentos_por_firmar);
 module.exports = router;

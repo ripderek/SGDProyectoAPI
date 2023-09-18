@@ -295,9 +295,9 @@ const proyectos_areas = async (req, res, next) => {
     try {
         const { id } = req.params;
         const { id2 } = req.params;
-        const {id3} = req.params;
+        const { id3 } = req.params;
 
-        const users = await pool.query('select * from proyectos_areas($1,$2,$3)', [id, id2,id3]);
+        const users = await pool.query('select * from proyectos_areas($1,$2,$3)', [id, id2, id3]);
         console.log(users);
         return res.status(200).json(users.rows);
     } catch (error) {
@@ -373,6 +373,7 @@ const ver_pdf_2 = async (req, res) => {
 
     }
 }
+//funcion de prueba para ver si se almacena el pdf en una variable en el frontend 
 //Ver pdf solo enviar la URL del doc
 const ver_pdf_url = async (req, res) => {
     try {
@@ -1320,10 +1321,8 @@ const generar_lista_usuarios = async (req, res, next) => {
         fs.writeFileSync(rutaNuevoDOc, await pDFTODO.save());
         //aqui guardar el documento en la base de datos y cambiar todas las portadas en false 
         var ur = "../." + rutaNuevoDOc;
+        //esta funcion modificarla para crear la tabla de las firmas-participantes xdxd skere modo diablo
         const guardar_doc = await pool.query('call aceptar_documento($1,$2)', [ur, id]);
-
-
-
         return res.status(200).json({ message: "Se preparo el documento" });
     } catch (error) {
         console.log(error);
@@ -1573,13 +1572,13 @@ const guardar_pdf_editor = async (req, res) => {
         const pdfFilePath = req.file.path;
 
         // Aquí guardar pdfFilePath en la BD, que es la ruta
-        console.log("Ruta donde se guardo pdf editor",pdfFilePath);
+        console.log("Ruta donde se guardo pdf editor", pdfFilePath);
 
         // Devuelve una respuesta con la ruta del archivo almacenado
         return res.status(200).json({ filePath: pdfFilePath });
     } catch (error) {
         console.error('Error al guardar el archivo PDF:', error);
-        return res.status(404).json({ message: error.message }); 
+        return res.status(404).json({ message: error.message });
     }
 }
 
@@ -1588,15 +1587,13 @@ const guardar_pdf_firma = async (req, res) => {
     try {
         // El archivo PDF se ha cargado con éxito, y su ruta se encuentra en req.file.path
         const pdfFilePath = req.file.path;
-
         // Aquí guardar pdfFilePath en la BD, que es la ruta
-        console.log("Ruta donde se guardo pdf editor",pdfFilePath);
-
+        console.log("Ruta donde se guardo pdf editor", pdfFilePath);
         // Devuelve una respuesta con la ruta del archivo almacenado
         return res.status(200).json({ filePath: pdfFilePath });
     } catch (error) {
         console.error('Error al guardar el archivo PDF:', error);
-        return res.status(404).json({ message: error.message }); 
+        return res.status(404).json({ message: error.message });
     }
 }
 
@@ -1622,6 +1619,31 @@ const datos_a_editar_proyecto = async (req, res, next) => {
         return res.status(404).json({ message: error.message });
     }
 }
+//funcion que retorne los datos de revision de un proyecto 
+const datos_revision_proyecto = async (req, res, next) => {
+    try {
+        const { id, id2 } = req.params;
+        const users = await pool.query('select * from datos_revision($1,$2)', [id, id2]);
+        console.log(users);
+        return res.status(200).json(users.rows[0]);
+    } catch (error) {
+        return res.status(404).json({ message: error.message });
+    }
+}
+
+//funcion que retorne la lista de proyectos que un usuario debe firmar xd 
+const documentos_por_firmar = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const users = await pool.query('select * from documentos_por_firmar($1)', [id]);
+        console.log(users);
+        return res.status(200).json(users.rows);
+    } catch (error) {
+        console.log(error);
+        return res.status(404).json({ message: error.message });
+    }
+}
+
 module.exports = {
     crear_proyecto,
     crear_categoria,
@@ -1674,7 +1696,9 @@ module.exports = {
     ver_docs_alcance,
     ver_pdf_alcance,
     guardar_pdf_editor,
-    guardar_pdf_firma
+    guardar_pdf_firma,
     editar_proyecto,
-    datos_a_editar_proyecto
+    datos_a_editar_proyecto,
+    datos_revision_proyecto,
+    documentos_por_firmar
 };
