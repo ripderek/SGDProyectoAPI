@@ -44,6 +44,16 @@ const all_data_area = async (req, res, next) => {
         next(error);
     }
 }
+//busqueda para filtrar por palabra clave 
+const all_data_area_busqueda = async (req, res, next) => {
+    try {
+        const { clave } = req.params;
+        const area = await pool.query('select * from area_alldata_busqueda($1)', [clave]);
+        return res.status(200).json(area.rows);
+    } catch (error) {
+        next(error);
+    }
+}
 const relacionar_usuario_area = async (req, res, next) => {
     try {
         //agregar un usuario a un area
@@ -291,5 +301,6 @@ module.exports = {
     areas_para_flujos,
     data_area_i,
     areas_admin_user,
-    datos_a_editar
+    datos_a_editar,
+    all_data_area_busqueda
 };

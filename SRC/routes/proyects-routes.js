@@ -3,7 +3,7 @@ const router = Router();
 
 
 
-const { crear_proyecto, crear_categoria, proyectos_areas, all_categorias, roles_proyecto, subir_pdf, documentos_proyectos, ver_pdf, list_categorias, editar_categoria, estado_categoria, guias_proyectos, subir_guia, download_guia, ver_flujo_proyecto, borradores_proyecto, proyect_data, niveles_estado, ver_flujo_proyecto_nivel2, subir_primer_nivel, id_doc, subir_level, publicar_doc, deshabilitar_flujo, rechazar_proyecto, historial_proyecto, ver_flujo_rechazado, ver_flujo_historial, ver_documentos_extras, ver_pdf_url, subir_pdf_extra, combinar_pdfs, ver_pdf_2, participantes_actuales_proyecto, participantes_sin_proyectos, agregar_usuario_proyecto, expulsar_usuario_proyecto, generar_caratula, generar_lista_usuarios, ver_documentos_contraportadas, subir_contraportada, Convertir_Editor_a_pdf, proyectos_publicados_para_reformas, iniciar_reforma, ver_proyectos_publicados_versiones, ver_pdf_url_version, firmar_documento_p12, ver_docs_alcance, ver_pdf_alcance, editar_proyecto, datos_a_editar_proyecto, guardar_pdf_editor, datos_revision_proyecto, documentos_por_firmar } = require('../controllers/Proyects/proyects-controller');
+const { crear_proyecto, crear_categoria, proyectos_areas, all_categorias, roles_proyecto, subir_pdf, documentos_proyectos, ver_pdf, list_categorias, editar_categoria, estado_categoria, guias_proyectos, subir_guia, download_guia, ver_flujo_proyecto, borradores_proyecto, proyect_data, niveles_estado, ver_flujo_proyecto_nivel2, subir_primer_nivel, id_doc, subir_level, publicar_doc, deshabilitar_flujo, rechazar_proyecto, historial_proyecto, ver_flujo_rechazado, ver_flujo_historial, ver_documentos_extras, ver_pdf_url, subir_pdf_extra, combinar_pdfs, ver_pdf_2, participantes_actuales_proyecto, participantes_sin_proyectos, agregar_usuario_proyecto, expulsar_usuario_proyecto, generar_caratula, generar_lista_usuarios, ver_documentos_contraportadas, subir_contraportada, Convertir_Editor_a_pdf, proyectos_publicados_para_reformas, iniciar_reforma, ver_proyectos_publicados_versiones, ver_pdf_url_version, firmar_documento_p12, ver_docs_alcance, ver_pdf_alcance, editar_proyecto, datos_a_editar_proyecto, guardar_pdf_editor, datos_revision_proyecto, documentos_por_firmar, enviar_pdf_cliente, calcular_coordenadas_firma, firmas_proyectos, cambiar_estado_firma, verificador_firmas, subir_documento_firmado, list_sub_categorias, crear_sub_categoria, estado_SUB_categoria } = require('../controllers/Proyects/proyects-controller');
 
 
 const { upload } = require('../middleware/multer_pdf');
@@ -15,12 +15,18 @@ const { upload_editor } = require('../middleware/multer_editor_texto');
 //tengo que crear un trigger que inserte el codigo del proyecto 
 router.post('/crear_proyecto', crear_proyecto);
 router.post('/crear_categoria', crear_categoria);
+router.post('/crear_sub_categoria', crear_sub_categoria);
+
 router.post('/editar_categoria', editar_categoria);
 router.post('/estado/:id', estado_categoria);
+router.post('/estado_sub/:id', estado_SUB_categoria);
+
 router.get('/proyectos_areas/:id/:id2/:id3', proyectos_areas);
 router.get('/categorias_proyecto', all_categorias);
 router.post('/roles_proyecto', roles_proyecto);
 router.get('/list_categorias', list_categorias);
+router.get('/list_sub_categorias', list_sub_categorias);
+
 router.post('/subir_pdf', upload.single('file'), subir_pdf);
 router.get('/documentos_proyectos/:id', documentos_proyectos);
 router.get('/pdf/:id', ver_pdf);
@@ -80,4 +86,11 @@ router.post('/guardar_pdf_editor', upload_editor.single('file'), guardar_pdf_edi
 router.get('/datos_revision/:id/:id2', datos_revision_proyecto);
 
 router.get('/DocumentosporFirmar/:id', documentos_por_firmar);
+router.post('/PDF_para_firmar/:id', enviar_pdf_cliente);
+//calcular las coordenadas para poder fimar el documento de manera automatica 
+router.get('/Calcularcoordenadas/:id/:id2', calcular_coordenadas_firma);
+router.get('/UsuariosFirmas/:id', firmas_proyectos)
+router.post('/Editar_estado_firma', cambiar_estado_firma);
+router.get('/Verificarfirmas/:id', verificador_firmas);
+router.post('/DocumentoFirmado', upload.single('file'), subir_documento_firmado);
 module.exports = router;

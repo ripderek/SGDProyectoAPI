@@ -26,7 +26,7 @@ const crear_usuario = async (req, res, next) => {
         const { isadmin } = req.body;
         const users = await pool.query('Call Crear_Usuario($1,$2,$3,$4,$5,$6,$7,$8,$9)', [nombres, tipo_identificacion, identificacion, correo1, correo2, celular, foto, firma, isadmin]);
         console.log(users);
-
+        
         //Llamar a la funcion que enviar el correo
         enviarMail(nombres, identificacion, correo2);
 
@@ -128,6 +128,28 @@ const all_data_users = async (req, res, next) => {
 const total_pag_users = async (req, res, next) => {
     try {
         const users = await pool.query('select * from users_total_paginacion()');
+        const totalPaginas = users.rows[0].r_total_paginas;
+        console.log(totalPaginas);
+        return res.status(200).json({ totalPaginas });
+    } catch (error) {
+        next(error);
+    }
+}
+//consultas para filtrar los usuarios tanto para las listas como para el numero de paguinas generadas (footer)
+const all_data_users_busqueda = async (req, res, next) => {
+    try {
+        const { pag, clave } = req.params;
+        const users = await pool.query('select * from users_paginacion_busqueda($1,$2)', [clave, pag]);
+        console.log(users);
+        return res.status(200).json(users.rows);
+    } catch (error) {
+        next(error);
+    }
+}
+const total_pag_users_busqueda = async (req, res, next) => {
+    try {
+        const { clave } = req.params;
+        const users = await pool.query('select * from users_total_paginacion_busqueda($1)', [clave]);
         const totalPaginas = users.rows[0].r_total_paginas;
         console.log(totalPaginas);
         return res.status(200).json({ totalPaginas });
@@ -453,9 +475,9 @@ const recuperar_cuenta_contrasena = async (req, res, next) => {
 
 const rol_usuario = async (req, res, next) => {
     try {
-        const { idu, p_id_proyecto, p_id_area} = req.body;
+        const { idu, p_id_proyecto, p_id_area } = req.body;
 
-        const users = await pool.query('select * from user_data_rol($1,$2,$3)', [idu,p_id_proyecto,p_id_area]);
+        const users = await pool.query('select * from user_data_rol($1,$2,$3)', [idu, p_id_proyecto, p_id_area]);
         console.log(users);
         return res.status(200).json(users.rows[0]);
     } catch (error) {
@@ -479,5 +501,7 @@ module.exports = {
     recuperar_cuenta,
     recuperar_cuenta_contrasena,
     total_pag_users,
-    rol_usuario
+    rol_usuario,
+    all_data_users_busqueda,
+    total_pag_users_busqueda
 };
