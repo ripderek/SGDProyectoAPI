@@ -1,13 +1,14 @@
 const { Router } = require('express');
 const router = Router();
 
-const { crear_area, all_data_area, relacionar_usuario_area, usuarios_areas, usuarios_sin_areas, todos_los_roles, data_user_area, data_area_id, imagen_area, areas_jerarquias, areas_usuarios, editar_datos_area, cambiar_foto, deshabilitar_usuario_area, cambiar_rol_usuario_admin, areas_para_flujos, data_area_i, areas_admin_user, datos_a_editar } = require('../controllers/Area/area-controller');
+const { crear_area, all_data_area, relacionar_usuario_area, usuarios_areas, usuarios_sin_areas, todos_los_roles, data_user_area, data_area_id, imagen_area, areas_jerarquias, areas_usuarios, editar_datos_area, cambiar_foto, deshabilitar_usuario_area, cambiar_rol_usuario_admin, areas_para_flujos, data_area_i, areas_admin_user, datos_a_editar, all_data_area_busqueda } = require('../controllers/Area/area-controller');
 
 const { upload } = require('../middleware/multer_area');
 
 
 router.post('/crear_area', upload.single('file'), crear_area);
 router.get('/all_area', all_data_area);
+router.get('/all_area_busqueda/:clave', all_data_area_busqueda);
 router.post('/usuario_area', relacionar_usuario_area);
 router.get('/user_area/:id', usuarios_areas);
 router.get('/users_sin_area/:id', usuarios_sin_areas);

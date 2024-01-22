@@ -11,13 +11,13 @@ var pdf = require("pdf-creator-node");
 const { PDFDocument, rgb, StandardFonts, PDFHexString, PDFArray, PDFSignature, PDFAcroSignature } = require('pdf-lib');
 const crear_proyecto = async (req, res, next) => {
     try {
-        const { p_titulo, p_id_area, p_id_categoria, p_prefijo_proyecto } = req.body;
+        const { p_titulo, p_id_area, p_id_categoria, p_prefijo_proyecto, p_id_sub_categoria, p_Portada, p_encabezado, p_requiere_firmas } = req.body;
 
         if (!p_id_categoria)
             return res.status(404).json({ message: "Seleccione una categoria" });
 
 
-        const users = await pool.query('call crear_proyecto($1,$2,$3,$4)', [p_titulo, p_id_area, p_id_categoria, p_prefijo_proyecto]);
+        const users = await pool.query('call crear_proyecto_new_procedure($1,$2,$3,$4,$5,$6,$7,$8)', [p_titulo, p_id_area, p_id_categoria, p_prefijo_proyecto, p_id_sub_categoria, p_Portada, p_encabezado, p_requiere_firmas]);
         console.log(users);
         return res.status(200).json({ message: "Se creo el proyecto" });
     } catch (error) {
@@ -274,7 +274,19 @@ const subir_pdf = async (req, res, next) => {
 const crear_categoria = async (req, res, next) => {
     try {
         const { p_nombre, p_prefijo, p_descripcion } = req.body;
+        //anadir el nuevo campo para saber si permite seleccionar los participantes del proximo nivel 
         const users = await pool.query('call crear_categoria_proyecto($1,$2,$3)', [p_nombre, p_prefijo, p_descripcion]);
+        console.log(users);
+        return res.status(200).json({ message: "Se creo la categoria" });
+    } catch (error) {
+        return res.status(404).json({ message: error.message });
+    }
+}
+const crear_sub_categoria = async (req, res, next) => {
+    try {
+        const { p_titulo_sub_categoria, p_descripcion } = req.body;
+        //anadir el nuevo campo para saber si permite seleccionar los participantes del proximo nivel 
+        const users = await pool.query('call crear_sub_categoria($1,$2)', [p_titulo_sub_categoria, p_descripcion]);
         console.log(users);
         return res.status(200).json({ message: "Se creo la categoria" });
     } catch (error) {
@@ -291,6 +303,18 @@ const estado_categoria = async (req, res, next) => {
         return res.status(404).json({ message: error.message });
     }
 }
+//Estado_Sub_Categoria
+const estado_SUB_categoria = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const users = await pool.query('call Estado_Sub_Categoria($1)', [id]);
+        console.log(users);
+        return res.status(200).json({ message: "Se edito el estado de  la categoria" });
+    } catch (error) {
+        return res.status(404).json({ message: error.message });
+    }
+}
+
 const proyectos_areas = async (req, res, next) => {
     try {
         const { id } = req.params;
@@ -316,6 +340,15 @@ const all_categorias = async (req, res, next) => {
 const list_categorias = async (req, res, next) => {
     try {
         const users = await pool.query('select * from Lis_categorias()');
+        console.log(users);
+        return res.status(200).json(users.rows);
+    } catch (error) {
+        return res.status(404).json({ message: error.message });
+    }
+}
+const list_sub_categorias = async (req, res, next) => {
+    try {
+        const users = await pool.query('select * from lista_sub_categorias()');
         console.log(users);
         return res.status(200).json(users.rows);
     } catch (error) {
@@ -493,8 +526,8 @@ const ver_flujo_proyecto_nivel2 = async (req, res, next) => {
 const subir_primer_nivel = async (req, res, next) => {
     try {
         //SI EL PROYECTO TIENE REFORMA = TRUE ENTONCES SE DEBE DE SUMAR EL PESO DEL FLUJO SELECCIONADO CON LA VERSION ACTUAL DEL PROYECTO Y HACER UN UPDATE DE LA VERSION Y DEL CODIGO DEL PROYECTO SKERE MODO DIABLO
-        const { list_niveles } = req.body;
-        const users = await pool.query('call subir_primer_nivel($1)', [JSON.stringify(list_niveles)]);
+        const { list_niveles, id_pro } = req.body;
+        const users = await pool.query('call subir_primer_nivel($1,$2)', [JSON.stringify(list_niveles), id_pro]);
         return res.status(200).json({ message: "Se subio de nivel el proyecto" });
     } catch (error) {
         console.log(error);
@@ -1643,7 +1676,139 @@ const documentos_por_firmar = async (req, res, next) => {
         return res.status(404).json({ message: error.message });
     }
 }
+const enviar_pdf_cliente = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const users = await pool.query('select * from ver_docs_x_id_2($1)', [id]);
+        const urlArchivos = path.join(__dirname, "../" + users.rows[0].d_url)
+        // Lee el archivo PDF utilizando fs
+        console.log(urlArchivos);
+        return res.download(urlArchivos);
+    } catch (error) {
+        console.log(error);
+        return res.status(404).json({ message: error.message });
+    }
+}
+//funcion para calcular la posicion donde el usuario tiene que firmar skere modo diablo 
+const calcular_coordenadas_firma = async (req, res, next) => {
+    try {
+        const { id, id2 } = req.params;
+        //el primer id es para el id del proyecto
+        //el segundo id es apra el id del usuario 
+        const users = await pool.query('select * from listado_para_firmar($1)', [id]);
+        //aqui calcular el listado kssjssjjs skere modo diablo
+        console.log("Listado sin modificaciones");
+        console.log(users.rows);
+        //aqui se almacena la coordenada donde va a firmar el usaurio
+        var coordenadas_firmar = 0;
+        //valor inicial de donde va a comenzar a calcular 
+        //de momento iniciaria en 510
+        var coordenada_x = 190;
+        var incial = 510;
+        var coordenada_y = 510;
+        //los saltos que se daran
+        var saltos = 70;
+        //saltos de nivel 
+        var saltos_nivel = 135
+        //numero de paguina  en forma de vector 0,1,2,3,4,=>
+        var numero_paguina = 1
+        //si en el numero fila tiene tiene 1 y el tipo de nivel es mayor a 1 entonces se le resta
+        //a la coordenada_y = (coordenada_y - saltos)- saltos_nivel
+        //y ese sera la nueva coordenada_y 
+        //else entonces coordenada_y= coordenada_y-saltos
+        //si la coordenada es menor o igual 30 entonces anadir una paguina y volver al 510 en y 
 
+        //recorrer la lista de usuarios 
+        for (i = 0; i < users.rows.length; i++) {
+            console.log(users.rows[i].r_nombre_firma);
+            //primero preguntar si hace o no un salto de paguina 
+            if (coordenada_y <= 30) {
+                numero_paguina++;
+                coordenada_y = incial;
+                console.log("Hacer salto de paguina:" + numero_paguina);
+            }
+            //si no hay un salto de paguina encontes preguntar si hay un salto de titulo 
+            if (users.rows[i].r_numero_fila === 1 && users.rows[i].r_tipo_nivel !== 1 && coordenada_y != incial) {
+                coordenada_y = (coordenada_y + saltos) - saltos_nivel;
+                console.log(coordenada_y);
+                //si este usuario corresponde al id que se envio entonces retornar el numero de hoja y la posicion x, y
+                //retunr
+                if (users.rows[i].r_id_user === id2) {
+                    return res.status(200).json({ coordenadaX: coordenada_x, coordenadaY: coordenada_y, numPag: numero_paguina });
+                }
+                //console.log("Salto de titulo:" + coordenada_y);
+                coordenada_y = coordenada_y - saltos;
+            }
+            else {
+                //console.log("Coordenada para firmar:" + coordenada_y);
+                console.log(coordenada_y);
+                //si este usuario corresponde al id que se envio entonces retornar el numero de hoja y la posicion x, y
+                //retunr
+                if (users.rows[i].r_id_user === id2) {
+                    return res.status(200).json({ coordenadaX: coordenada_x, coordenadaY: coordenada_y, numPag: numero_paguina });
+                }
+                coordenada_y = coordenada_y - saltos;
+            }
+
+
+        }
+        return res.status(200).json(users.rows);
+    } catch (error) {
+        console.log(error);
+        return res.status(404).json({ message: error.message });
+    }
+}
+//funcion que retorne los usuarios y el estado de su firma segun el id del proyecto 
+const firmas_proyectos = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const users = await pool.query('select * from usuarios_por_firmar($1)', [id]);
+        console.log(users);
+        return res.status(200).json(users.rows);
+    } catch (error) {
+        return res.status(404).json({ message: error.message });
+    }
+}
+//funcion para cambiar el estado de la firma de un usuario en un documento 
+const cambiar_estado_firma = async (req, res, next) => {
+    try {
+        const { p_id_firma } = req.body;
+        const users = await pool.query('call cambiar_estado_firma($1)', [p_id_firma]);
+        console.log(users);
+        return res.status(200).json({ message: "Se creo edito el estado" });
+    } catch (error) {
+        console.log(error);
+        return res.status(404).json({ message: error.message });
+    }
+}
+//verificador para activar el boton de publicar proyecto 
+const verificador_firmas = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const users = await pool.query('select * from verificar_firmas_usuarios($1)', [id]);
+        console.log(users);
+        return res.status(200).json(users.rows[0]);
+    } catch (error) {
+        return res.status(404).json({ message: error.message });
+    }
+}
+//funcion para guardar el nuevo pdf firmado
+const subir_documento_firmado = async (req, res, next) => {
+    try {
+        const { id } = req.body;
+        const { file } = req;
+        const { id_user } = req.body;
+        const documento = `${ipFileServer}${file?.filename}`;
+        console.log(documento);
+        //let ext = path.extname(file);
+        const users = await pool.query('call firmar_documento_proyecto($1,$2,$3)', [documento, id, id_user]);
+        console.log(users);
+        return res.status(200).json({ message: "se firmo el documento" });
+    } catch (error) {
+        console.log(error);
+        return res.status(404).json({ message: error.message });
+    }
+}
 module.exports = {
     crear_proyecto,
     crear_categoria,
@@ -1700,5 +1865,14 @@ module.exports = {
     editar_proyecto,
     datos_a_editar_proyecto,
     datos_revision_proyecto,
-    documentos_por_firmar
+    documentos_por_firmar,
+    enviar_pdf_cliente,
+    calcular_coordenadas_firma,
+    firmas_proyectos,
+    cambiar_estado_firma,
+    verificador_firmas,
+    subir_documento_firmado,
+    list_sub_categorias,
+    crear_sub_categoria,
+    estado_SUB_categoria
 };
