@@ -46,6 +46,25 @@ const crear_flujo_proyecto = async (req, res, next) => {
         return res.status(404).json({ message: error.message });
     }
 }
+//crear flujo de la categoria 
+const crear_flujo_proyecto_categoria = async (req, res, next) => {
+    try {
+        const { id, id2 } = req.params;
+        const { list_niveles } = req.body;
+        console.log("idcategoria" + id);
+        console.log("id_tipo" + id2);
+        console.log(list_niveles);
+        // console.log(id);
+        // console.log(id2);
+        // console.log("Lista de los niveles");
+        // console.log(list_niveles);
+        const users = await pool.query('call crear_flujo_categoria($1,$2,$3)', [id, id2, JSON.stringify(list_niveles)]);
+        return res.status(200).json({ message: "Se creo el flujo del proyecto" });
+    } catch (error) {
+        console.log(error);
+        return res.status(404).json({ message: error.message });
+    }
+}
 
 const crear_jerarquias_nivel = async (req, res, next) => {
     try {
@@ -138,5 +157,6 @@ module.exports = {
     ver_detalles__flujos,
     ver_tipos_jerarquias_activas,
     ver_detalles_niveles,
-    crear_flujo_proyecto
+    crear_flujo_proyecto,
+    crear_flujo_proyecto_categoria
 };

@@ -3,7 +3,20 @@ const router = Router();
 
 
 
-const { crear_proyecto, crear_categoria, proyectos_areas, all_categorias, roles_proyecto, subir_pdf, documentos_proyectos, ver_pdf, list_categorias, editar_categoria, estado_categoria, guias_proyectos, subir_guia, download_guia, ver_flujo_proyecto, borradores_proyecto, proyect_data, niveles_estado, ver_flujo_proyecto_nivel2, subir_primer_nivel, id_doc, subir_level, publicar_doc, deshabilitar_flujo, rechazar_proyecto, historial_proyecto, ver_flujo_rechazado, ver_flujo_historial, ver_documentos_extras, ver_pdf_url, subir_pdf_extra, combinar_pdfs, ver_pdf_2, participantes_actuales_proyecto, participantes_sin_proyectos, agregar_usuario_proyecto, expulsar_usuario_proyecto, generar_caratula, generar_lista_usuarios, ver_documentos_contraportadas, subir_contraportada, Convertir_Editor_a_pdf, proyectos_publicados_para_reformas, iniciar_reforma, ver_proyectos_publicados_versiones, ver_pdf_url_version, firmar_documento_p12, ver_docs_alcance, ver_pdf_alcance, editar_proyecto, datos_a_editar_proyecto, guardar_pdf_editor, datos_revision_proyecto, documentos_por_firmar, enviar_pdf_cliente, calcular_coordenadas_firma, firmas_proyectos, cambiar_estado_firma, verificador_firmas, subir_documento_firmado, list_sub_categorias, crear_sub_categoria, estado_SUB_categoria } = require('../controllers/Proyects/proyects-controller');
+const { crear_proyecto, crear_categoria, proyectos_areas, all_categorias, roles_proyecto,
+    subir_pdf, documentos_proyectos, ver_pdf, list_categorias, editar_categoria, estado_categoria,
+    guias_proyectos, subir_guia, download_guia, ver_flujo_proyecto, borradores_proyecto, proyect_data,
+    niveles_estado, ver_flujo_proyecto_nivel2, subir_primer_nivel, id_doc, subir_level, publicar_doc,
+    deshabilitar_flujo, rechazar_proyecto, historial_proyecto, ver_flujo_rechazado, ver_flujo_historial,
+    ver_documentos_extras, ver_pdf_url, subir_pdf_extra, combinar_pdfs, ver_pdf_2,
+    participantes_actuales_proyecto, participantes_sin_proyectos, agregar_usuario_proyecto,
+    expulsar_usuario_proyecto, generar_caratula, generar_lista_usuarios, ver_documentos_contraportadas,
+    subir_contraportada, Convertir_Editor_a_pdf, proyectos_publicados_para_reformas, iniciar_reforma,
+    ver_proyectos_publicados_versiones, ver_pdf_url_version, firmar_documento_p12, ver_docs_alcance,
+    ver_pdf_alcance, editar_proyecto, datos_a_editar_proyecto, guardar_pdf_editor, datos_revision_proyecto,
+    documentos_por_firmar, enviar_pdf_cliente, calcular_coordenadas_firma, firmas_proyectos,
+    cambiar_estado_firma, verificador_firmas, subir_documento_firmado, list_sub_categorias,
+    crear_sub_categoria, estado_SUB_categoria,ver_flujo_categoria } = require('../controllers/Proyects/proyects-controller');
 
 
 const { upload } = require('../middleware/multer_pdf');
@@ -47,6 +60,9 @@ router.post('/Rechazar/:id', rechazar_proyecto);
 router.get('/Historial/:id', historial_proyecto);
 router.get('/FlujoRechazado/:id', ver_flujo_rechazado);
 router.get('/VerFlujoHistorial/:id', ver_flujo_historial);
+router.get('/VerFlujoCategoria/:id', ver_flujo_categoria);
+
+//
 router.get('/DocumentosExtras/:id', ver_documentos_extras);
 router.get('/DocumentosExtras_portadas/:id', ver_documentos_contraportadas);
 router.get('/VerpdfUrl/:id', ver_pdf_url);

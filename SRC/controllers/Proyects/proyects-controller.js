@@ -12,7 +12,7 @@ const { PDFDocument, rgb, StandardFonts, PDFHexString, PDFArray, PDFSignature, P
 const crear_proyecto = async (req, res, next) => {
     try {
         const { p_titulo, p_id_area, p_id_categoria, p_prefijo_proyecto, p_id_sub_categoria, p_Portada, p_encabezado, p_requiere_firmas } = req.body;
-
+        console.log(req.body);
         if (!p_id_categoria)
             return res.status(404).json({ message: "Seleccione una categoria" });
 
@@ -339,7 +339,7 @@ const all_categorias = async (req, res, next) => {
 }
 const list_categorias = async (req, res, next) => {
     try {
-        const users = await pool.query('select * from Lis_categorias()');
+        const users = await pool.query('select * from lis_categorias()');
         console.log(users);
         return res.status(200).json(users.rows);
     } catch (error) {
@@ -673,6 +673,17 @@ const ver_flujo_historial = async (req, res, next) => {
     try {
         const { id } = req.params;
         const users = await pool.query('select * from flujo_Historial($1)', [id]);
+        console.log(users);
+        return res.status(200).json(users.rows);
+    } catch (error) {
+        return res.status(404).json({ message: error.message });
+    }
+}
+//Funcion para ver el flujo de una categoria
+const ver_flujo_categoria = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const users = await pool.query('select * from niveles_categoria_flujo($1)', [id]);
         console.log(users);
         return res.status(200).json(users.rows);
     } catch (error) {
@@ -1874,5 +1885,6 @@ module.exports = {
     subir_documento_firmado,
     list_sub_categorias,
     crear_sub_categoria,
-    estado_SUB_categoria
+    estado_SUB_categoria,
+    ver_flujo_categoria
 };
