@@ -175,6 +175,10 @@ add column Contra varchar(500);
 select PGP_SYM_DECRYPT(contra ::bytea, 'SGDV_KEY'),* from usuario u 
 --Proceso almacenado para iniciar sesion
 
+select * from usuario u where u.correo_institucional = ''or '1' ='1'
+
+
+
 Create or Replace Procedure Auth_Verification(email varchar(200),
 										  contra1 varchar(200),INOUT verification bool DEFAULT NULL)
 Language 'plpgsql'
@@ -8763,8 +8767,171 @@ END;
 $function$
 ;
 
+select * from rol_proyecto('00f1e857-f858-441e-8689-80d85b019cb1',57);
+-- DROP FUNCTION public.rol_proyecto(varchar, int4);
+
+CREATE OR REPLACE FUNCTION public.rol_proyecto(p_idu character varying, p_id_proyecto integer)
+ RETURNS TABLE(	
+ 			p_titulo character varying, 
+ 			p_rol character varying, 
+ 			p_subir boolean, 
+ 			p_reforma boolean, 
+ 			p_codigo character varying, 
+ 			p_flujo boolean)
+ LANGUAGE plpgsql
+AS $function$
+declare 
+	p_id_area int;
+begin
+	select np.id_departamento into p_id_area  from proyectos p 
+inner join flujo_proyecto fp on p.id_proyecto =fp.id_proyecto 
+inner join niveles_proyecto np on np.id_flujo = fp.id_flujo 
+inner join estado_nivel en on np.id_niveles_pro = en.id_nivel 
+where p.id_proyecto =p_id_proyecto
+order by np.nivel desc limit 1;
+
+	return query
+	select * from 
+	(select 
+	--ua.id_usuario ,
+	--p.id_area_responsable,
+	/*
+	(select ua.id_usuario from usuarios_areas  ua where ua.id_area = 68 and ua.estado and 
+		cast(ua.id_usuario as varchar(500))='00f1e857-f858-441e-8689-80d85b019cb1'),
+	*/
+	p.titulo,
+	(select 
+	case when ua.rol_area then cast('Admin' as varchar(100)) else cast('Not admin' as varchar(100)) end
+	from usuarios_areas  ua where ua.id_area = p_id_area and ua.estado and 
+		cast(ua.id_usuario as varchar(500))=p_idu),	--case when ua.rol_area then cast('Admin' as varchar(100)) else cast('Not admin' as varchar(100)) end ,
+	p.subir_docs,p.reforma ,p.codigo 
+	from proyectos p 
+	inner join area_departamental ad on p.id_area_responsable =ad.id_area 
+	--inner join usuarios_areas ua on ad.id_area =ua.id_area 
+		where 
+		--cast(ua.id_usuario as varchar(500))='c09cda3f-0346-4243-8e59-82d8741e32b1' and 
+		--cast(ua.id_usuario as varchar(500))='00f1e857-f858-441e-8689-80d85b019cb1' and 
+		p.id_proyecto=p_id_proyecto
+		) as x inner join
+	(select case when COUNT(*)>0 then true else false end as TieneFLujo from flujo_proyecto fp 
+	where id_proyecto = p_id_proyecto and estado =true 
+	) as y on 1=1;
+end;
+$function$
+;
+--57
+select case when COUNT(*)>0 then true else false end as TieneFLujo from flujo_proyecto fp 
+	where id_proyecto = p_id_area and estado =true 
 
 
+CREATE OR REPLACE FUNCTION public.rol_proyecto_original(p_idu character varying, p_id_proyecto integer)
+ RETURNS TABLE(p_titulo character varying, p_rol character varying, p_subir boolean, p_reforma boolean, p_codigo character varying, p_flujo boolean)
+ LANGUAGE plpgsql
+AS $function$
+begin
+	return query
+	select * from
+	(select p.titulo,case when ua.rol_area then cast('Admin' as varchar(100)) else cast('Not admin' as varchar(100)) end ,
+	p.subir_docs,
+	p.reforma ,
+	p.codigo 
+	from proyectos p 
+	inner join area_departamental ad on p.id_area_responsable =ad.id_area 
+	inner join usuarios_areas ua on ad.id_area =ua.id_area 
+		where cast(ua.id_usuario as varchar(500))=p_idu and p.id_proyecto=p_id_proyecto) as x inner join
+	(select case when COUNT(*)>0 then true else false end as TieneFLujo from flujo_proyecto fp 
+	where id_proyecto = p_id_proyecto and estado =true ) as y on 1=1;
+end;
+$function$
+;
+--57
+
+
+select * from usuarios_areas where id_area =68;
+
+
+
+--consulta arreglad xd 
+
+	
+
+---
+--obtener el nivel actual del proyecto
+
+
+
+select * from usuarios_areas ua where ua.id_area =73;
+select * from area_departamental ad where ad.id_area =73;
+select * from proyectos p where p.id_area_responsable =73;
+--id proyecto 57
+
+
+select * from area_departamental ad ;
+----
+select *
+	from proyectos p 
+	inner join usuarios_areas ua on p.id_area_responsable =ua.id_area 
+		where 
+		cast(ua.id_usuario as varchar(500))='00f1e857-f858-441e-8689-80d85b019cb1' and 
+		p.id_proyecto=57
+--68
+select * from proyectos p 
+inner join participantes p2 on p.id_proyecto =p2.id_proyecto 
+inner join usuarios_areas ua on p2.id_relacion_usu_ar = ua.id_relacion 
+where p.id_proyecto=57 and p2.estado and ua.estado ;
+
+
+
+
+select * from proyectos p where p.id_proyecto =57;
+
+
+--Cambiar la funcion de ver flujo para que alli mismo se puedan ver las revisiones 
+-- DROP FUNCTION public.niveles_estado_proyecto(int4);
+CREATE OR REPLACE FUNCTION public.niveles_estado_proyecto(p_id_proyecto integer)
+ RETURNS TABLE(r_id_estado integer, r_estado boolean, r_fecha_estado character varying, r_observacion character varying, r_id_nivel integer, r_estado_nivel character varying, r_id_area integer, r_nombre_area character varying, r_nivel integer, click boolean, r_tipo_nivel character varying)
+ LANGUAGE plpgsql
+AS $function$
+declare
+	T_niveles bool;
+begin
+	select  into T_niveles
+	case when count(*)>=1 then true else false end 
+	from proyectos p 
+	inner join flujo_proyecto fp on p.id_proyecto =fp.id_proyecto 
+	inner join niveles_proyecto np on fp.id_flujo =np.id_flujo 
+	inner join estado_nivel en on np.id_niveles_pro =en.id_nivel 
+	where p.id_proyecto =p_id_proyecto and fp.estado = true;	
+
+	--Si es true es porque tiene niveles entonces hay que retornar la data con todo en true 
+	if(T_niveles) then
+	return query
+	select 
+	en.id_estado ,en.estado ,cast(TO_CHAR(en.fecha, 'DD-MON-YYYY') as varchar(500)),en.observacion ,en.id_nivel ,en.estado_nivel,ad.id_area ,ad.nombre_area ,np.nivel, cast(true as bool) ,  n.titulo 
+	from proyectos p 
+	inner join flujo_proyecto fp on p.id_proyecto =fp.id_proyecto 
+	inner join niveles_proyecto np on fp.id_flujo =np.id_flujo 
+	inner join estado_nivel en on np.id_niveles_pro =en.id_nivel 
+	inner join area_departamental ad on np.id_departamento =ad.id_area 
+	inner join niveles n on np.id_nivel =n.id_nivel 
+
+	where p.id_proyecto =p_id_proyecto and fp.estado = true order by np.nivel asc ;		
+	--sino es xq aun esta en elaboracion, entonces retornar data solo con dicho estado
+	else 
+	return query
+			select 
+	 cast(0 as int),cast(false as bool),cast(TO_CHAR(p.fecha_creacion, 'DD-MON-YYYY') as varchar(500)),cast('En elaboracion' as varchar(100)),
+	 cast(0 as int),cast('No enviado' as varchar(100)),ad.id_area ,ad.nombre_area ,np.nivel , cast(false as bool), n.titulo 
+		from proyectos p 
+		inner join flujo_proyecto fp ON p.id_proyecto =fp.id_proyecto 
+		inner join niveles_proyecto np on fp.id_flujo =np.id_flujo 
+		inner join area_departamental ad ON np.id_departamento =ad.id_area 
+		inner join niveles n on np.id_nivel =n.id_nivel 
+		where p.id_proyecto =p_id_proyecto and fp.estado = true and np.nivel =0 order by np.nivel asc ;	
+	end if;
+end;
+$function$
+;
 
 
 
