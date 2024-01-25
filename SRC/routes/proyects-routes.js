@@ -16,7 +16,7 @@ const { crear_proyecto, crear_categoria, proyectos_areas, all_categorias, roles_
     ver_pdf_alcance, editar_proyecto, datos_a_editar_proyecto, guardar_pdf_editor, datos_revision_proyecto,
     documentos_por_firmar, enviar_pdf_cliente, calcular_coordenadas_firma, firmas_proyectos,
     cambiar_estado_firma, verificador_firmas, subir_documento_firmado, list_sub_categorias,
-    crear_sub_categoria, estado_SUB_categoria,ver_flujo_categoria } = require('../controllers/Proyects/proyects-controller');
+    crear_sub_categoria, estado_SUB_categoria, ver_flujo_categoria } = require('../controllers/Proyects/proyects-controller');
 
 
 const { upload } = require('../middleware/multer_pdf');
