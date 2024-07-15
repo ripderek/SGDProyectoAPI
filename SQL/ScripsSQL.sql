@@ -191,7 +191,8 @@ COMMIT;
 END;
 $$;
 
-select PGP_SYM_DECRYPT(u.contra ::bytea, 'SGDV_KEY') from usuario u ; 
+select PGP_SYM_DECRYPT(u.contra ::bytea, 'SGDV_KEY'),u.correo_institucional  from usuario u ; 
+
 
 --se tendria que enviar tres posibles estados 
 -- 1 .- El login es correcto 
@@ -8884,9 +8885,10 @@ where p.id_proyecto=57 and p2.estado and ua.estado ;
 
 
 select * from proyectos p where p.id_proyecto =57;
-
+select * from guias_proyectos gp ;
 
 --Cambiar la funcion de ver flujo para que alli mismo se puedan ver las revisiones 
+select * from niveles_estado_proyecto(57);
 -- DROP FUNCTION public.niveles_estado_proyecto(int4);
 CREATE OR REPLACE FUNCTION public.niveles_estado_proyecto(p_id_proyecto integer)
  RETURNS TABLE(r_id_estado integer, r_estado boolean, r_fecha_estado character varying, r_observacion character varying, r_id_nivel integer, r_estado_nivel character varying, r_id_area integer, r_nombre_area character varying, r_nivel integer, click boolean, r_tipo_nivel character varying)
@@ -8906,7 +8908,8 @@ begin
 	--Si es true es porque tiene niveles entonces hay que retornar la data con todo en true 
 	if(T_niveles) then
 	return query
-	select 
+	select * from
+			((	select 
 	en.id_estado ,en.estado ,cast(TO_CHAR(en.fecha, 'DD-MON-YYYY') as varchar(500)),en.observacion ,en.id_nivel ,en.estado_nivel,ad.id_area ,ad.nombre_area ,np.nivel, cast(true as bool) ,  n.titulo 
 	from proyectos p 
 	inner join flujo_proyecto fp on p.id_proyecto =fp.id_proyecto 
@@ -8914,8 +8917,20 @@ begin
 	inner join estado_nivel en on np.id_niveles_pro =en.id_nivel 
 	inner join area_departamental ad on np.id_departamento =ad.id_area 
 	inner join niveles n on np.id_nivel =n.id_nivel 
+	where p.id_proyecto =p_id_proyecto and fp.estado = true order by np.nivel asc )
+			union all
+			(select 
+	0, false, 'Sin fecha', 'Sin enviar',0, 'Sin enviar', ad.id_area ,ad.nombre_area ,np.nivel, cast(true as bool) ,  n.titulo 
+	--en.id_estado ,en.estado ,cast(TO_CHAR(en.fecha, 'DD-MON-YYYY') as varchar(500)),en.observacion ,
+	--en.id_nivel ,en.estado_nivel,ad.id_area ,ad.nombre_area ,np.nivel, cast(true as bool) ,  n.titulo 
+	from proyectos p 
+	inner join flujo_proyecto fp on p.id_proyecto =fp.id_proyecto 
+	inner join niveles_proyecto np on fp.id_flujo =np.id_flujo 
+LEFT JOIN estado_nivel en ON np.id_niveles_pro = en.id_nivel -- Cambiado a LEFT JOIN
+	inner join area_departamental ad on np.id_departamento =ad.id_area 
+	inner join niveles n on np.id_nivel =n.id_nivel 
+	where p.id_proyecto =p_id_proyecto  and en.id_nivel IS NULL and fp.estado  order by np.nivel asc ))as x;
 
-	where p.id_proyecto =p_id_proyecto and fp.estado = true order by np.nivel asc ;		
 	--sino es xq aun esta en elaboracion, entonces retornar data solo con dicho estado
 	else 
 	return query
@@ -8933,5 +8948,614 @@ end;
 $function$
 ;
 
+select * from proyectos p ;
 
+--funcion para listar los flujos diponibles de una categoria 
+select * from categorias_proyecto cp ;
+
+create or replace function fu_lista_flujos_categoria(idu int)
+returns table
+(
+	r_id_flujo int, r_estado bool, r_id_tipo_jerarquia int, r_fecha character varying
+)
+language 'plpgsql'
+as
+$BODY$
+begin
+	return query
+	select fc.id_flujo,estado,id_tipo_jerarquia,cast(TO_CHAR(fc.fecha_creacion, 'DD-MON-YYYY') as varchar(500))
+	from flujo_categoria fc where fc.id_categoria =idu order by fc.id_flujo asc;
+end;
+$BODY$
+
+
+
+
+select * from fu_lista_flujos_categoria(14);
+select * from niveles_categoria_flujo(13);
+--13
+-- DROP FUNCTION public.niveles_categoria_flujo(int4);
+
+CREATE OR REPLACE FUNCTION public.niveles_categoria_flujo(p_id_categoria integer)
+ RETURNS TABLE(area_id integer, nombrearea character varying, nivel character varying, numero integer)
+ LANGUAGE plpgsql
+AS $function$
+declare 
+	p_id_flujo int;
+begin
+	/*
+	--OBTENER EL ID DEL FLUJO DEPENDIENDO DEL ID DE LA CATEGORIA 
+	select fc.id_flujo  into  p_id_flujo from flujo_categoria fc where fc.id_categoria=p_id_categoria;
+	*/
+	--RETORNAR MAPEO 
+	return query
+	select * from 
+	((SELECT 0, 'Elaboracion', 'Elaboracion', 0)
+	UNION ALL 
+	(SELECT ad.id_area, ad.nombre_area, n.titulo, np.nivel 
+	FROM niveles_proyecto_categoria np
+	INNER JOIN area_departamental ad ON np.id_departamento = ad.id_area 
+	INNER JOIN niveles n ON np.id_nivel = n.id_nivel 
+	WHERE np.id_flujo = p_id_categoria
+	ORDER BY np.nivel asc))as x;
+end;
+$function$
+;
+
+
+
+--SEGUNDO FLUJO DE UNA CATEGORIA
+--ANTES:
+	--Anadir un campo NumReforma en proyecto que sea secuencial int 
+	--Inicia en 1 default y si es uno entonces buscara si la categoria tiene flujo y si tiene flujo escojera el primero
+	--Hacer un row number de los flujos categorias para escojer el adecuado
+	--Cuando sea mayor a 1 es decir primeras reformas hasta n reformars:
+		--Cuando se publique debe preguntar si la categoria tiene otro flujo mas entonces copiar el nuevo flujo y llevarse a todos los usuarios del nivel de elaboracion al nuevo nivel
+		--Con sus revisores
+--Ver los niveles de un flujo categoria con sus areas
+select * from categorias_proyecto cp ;
+select * from flujo_categoria fc where fc.id_categoria =14 order by fc.id_flujo desc;
+
+
+---Verificar si se puede usar esta consulta para recorrer el cursor de copiar el siguiente flujo
+--En esta consultada buscar el numero de flujo categoria segun el numero de reforma del proyecto por ejemplo si es 1 entonces escojer el rownumber 1 
+select fc.id_flujo  from flujo_categoria fc 
+where fc.id_categoria = 14 and estado 
+order by fc.fecha_creacion asc limit 1;
+
+select *  from niveles_proyecto_categoria np where np.id_flujo =13 and np.estado;
+select *  from niveles_proyecto_categoria np where np.id_flujo =14 and np.estado;
+
+--ordernado para sacar el numero que responde a la reforma 
+--aqui hay que enviar el numero de reforma por ejemplo si es 2 entonces where row_num = 2 para obtener el id del flujo
+
+
+
+
+---FUncion obtiene el p_id_flujo
+select X.id_flujo from 
+(SELECT
+    fc.id_flujo,
+    fc.id_categoria,
+    ROW_NUMBER() OVER (PARTITION BY fc.id_categoria ORDER BY fc.fecha_creacion ASC) AS row_num
+FROM
+    flujo_categoria fc
+WHERE
+    fc.id_categoria = 14 AND estado
+ORDER BY
+    fc.fecha_creacion asc) as X
+where X.row_num = (select numreforma from proyectos p where p.id_proyecto = 57)
+
+-- DROP FUNCTION public.copiar_niveles_categoria_proyecto(int4, int4, int4, int4);
+
+CREATE OR REPLACE FUNCTION public.copiar_niveles_categoria_proyecto_reformas( p_id_proyecto integer, p_id_categoria integer, p_id_flujo integer)
+ RETURNS void
+ LANGUAGE plpgsql
+AS $function$
+DECLARE
+ 	ID_nivel_c int;
+ 	ID_Departamente int;
+ 	ID_nivel int;
+ 	Nivel int;
+ 	P_id_flujo_new int;
+ 	--/NUEVO
+ 	p_id_tipo_jerarquia int;
+ 	p_id_cabecera int;
+    curCopiar cursor for select id_niveles_pro  from niveles_proyecto_categoria np where np.id_flujo =p_id_flujo and np.estado;
+begin
+	--PRIMERO CREAR EL FLUJO PROYECTO
+	--Obtener el tipo jerarquia que tiene el flujo categoria 
+	--IMPORTANTE ESCOJER EL FLUJO CATEGORIA QUE CORRESPONDE AL NUMERO DEL PROYECTO
+	select X.tipJerarqui into p_id_tipo_jerarquia  from 
+	(select  fc.id_tipo_jerarquia as tipJerarqui,
+		    ROW_NUMBER() OVER (PARTITION BY fc.id_categoria ORDER BY fc.fecha_creacion ASC) AS row_num
+	from flujo_categoria fc 
+	where fc.id_categoria =p_id_categoria and estado 
+	order by fc.fecha_creacion asc) as X 
+	where X.row_num=(select p.numreforma from proyectos p where p.id_proyecto=p_id_proyecto); 
+	--crear un nuevo flujo segun el id del proyecto 
+	insert into flujo_proyecto (id_proyecto ,id_tipo_jerarquia)values
+	(p_id_proyecto,p_id_tipo_jerarquia);
+	--obtener el id flujo ultimo creado 
+
+	select fp2.id_flujo into P_id_flujo_new from flujo_proyecto fp2 where fp2.id_proyecto = p_id_proyecto and estado = true order by fp2.fecha_creacion desc limit 1;
+	
+ 	
+ 	--COMO LA CATEGORIA NO TIENE EL PRIMER NIVEL = ELABORACION ENTONCES ESE INSERTARLO MANUALMENTE QUE ES EL EQUIVALENTE AL ULTIMO FLUJO CREADO PARA ESE PROYECTO EN SU ULTIMO NIVEL 
+		--HAY QUE TOMAR EL PRIMER ID DEL AREA DEL PRIMER NIVEL DEL FLUJO CATEGORIA CORRESPONDIENTE A NUMREFORM
+	select npc.id_departamento into ID_Departamente from
+(
+select * from 
+(select id_flujo ,
+    ROW_NUMBER() OVER (PARTITION BY fc.id_categoria ORDER BY fc.fecha_creacion ASC) AS row_num
+from flujo_categoria fc 
+where fc.id_categoria = (select p.id_categoria from proyectos p where p.id_proyecto=p_id_proyecto)) as X
+where X.row_num =(select p.numreforma from proyectos p where p.id_proyecto=p_id_proyecto) ) as Y
+inner join niveles_proyecto_categoria npc on Y.id_flujo = npc.id_flujo order by npc.nivel asc limit 1;
+	
+
+	/*
+	select np.id_departamento into ID_Departamente from 
+	(select fp.id_flujo  as idflujo
+	from flujo_proyecto fp 
+	where fp.id_proyecto =	p_id_proyecto
+	order by fp.fecha_creacion desc limit 1) as x 
+	inner join niveles_proyecto np on np.id_flujo = X.idflujo order by np.nivel desc limit 1;
+	*/
+	select jn.id_cabecera into ID_nivel from jerarquias_niveles jn where jn.id_tipo_jerarquia =p_id_tipo_jerarquia order by jn.fecha_creacion desc limit 1;
+	--Insertar el primer nivel Elaboracion
+	insert into niveles_proyecto(id_departamento,id_flujo,id_nivel,nivel)
+	values(ID_Departamente,
+	P_id_flujo_new, ID_nivel
+	,0);
+	--RECORRER EL CURSOR
+   open curCopiar;
+	fetch next from curCopiar into ID_nivel_c;
+	while (Found) loop	
+	 select np.id_departamento, np.id_nivel ,np.nivel into ID_Departamente,ID_nivel,Nivel from niveles_proyecto_categoria np where np.id_niveles_pro=ID_nivel_c;
+		--esto tiene que insertar el cursor en la tabla
+		insert into niveles_proyecto(id_departamento,id_flujo,id_nivel,nivel)
+		values(ID_Departamente,P_id_flujo_new,ID_nivel,Nivel);
+		--cerrar el cursor 
+	fetch curCopiar into ID_nivel_c;
+	end loop;
+	close curCopiar;
+	EXCEPTION
+        -- Si ocurre un error en la transacción principal, revertir
+        WHEN OTHERS THEN
+            ROLLBACK;
+            RAISE EXCEPTION 'Ha ocurrido un error en el trigger: %', SQLERRM;
+END;
+$function$
+;
+
+
+
+-- DROP PROCEDURE public.publicar_doc(int4);
+
+--Anadir el nuevo algoritmo 
+CREATE OR REPLACE PROCEDURE public.publicar_doc(IN p_proyecto_id integer)
+ LANGUAGE plpgsql
+AS $procedure$
+declare
+	p_id_estado int;
+	p_url_doc varchar(900);
+	p_titulo_proyecto varchar(900);
+	p_version_p DECIMAL(5, 1);
+	p_id_flujo int;
+	p_id_area int;
+	p_codigo_proyecto varchar(900);
+	p_tiene_otro_flujo bool;
+	p_categoria int;
+	ID_F int =0;
+	p_id_departamtento int;
+	p_id_nivel int;
+	p_nivel int;
+	p_id_nivel_flujo int;
+	p_primer_nivel int;
+	p_ultimo_historial int;
+	es_reforma bool;
+	peso DECIMAL(5, 1);
+	Prefijo_proyect varchar(50);
+	Prefijo_area varchar(50);
+	Prefijo_categoria varchar(50);
+begin
+	--seleccionar el id a editar xdxdx Maholy aun no te olvido
+	select into p_id_estado en.id_estado 
+	from proyectos p 
+	inner join flujo_proyecto fp on p.id_proyecto =fp.id_proyecto 
+	inner join niveles_proyecto np on fp.id_flujo =np.id_flujo 
+	inner join estado_nivel en on np.id_niveles_pro = en.id_nivel  
+	where p.id_proyecto =p_proyecto_id and en.enviando = false
+	order by en.id_estado desc limit 1;
+	--editar ese id 
+	update estado_nivel set observacion='Se publica el Documento', estado_nivel='Aceptado', enviando=true
+      where id_estado = p_id_estado;
+     --ahora se tiene que insertar el ultimo documento de ese proyecto en la tabla de publicaciones 
+     --primero obtener la url del ultimo documento activo del proyecto mediante el id del proyect 
+     select into p_url_doc url_modificado  from documentos_proyectos dp where id_proyecto = p_proyecto_id and estado =true order by id_documento  desc limit 1 ;
+	--obtener los datos de la tabla proyecto Titulo, Version , ID flujo
+    select p.titulo ,p.versionp into p_titulo_proyecto,p_version_p from proyectos p where p.id_proyecto =p_proyecto_id;
+   --obtener el id del ultimo flujo que tiene un proyecto 
+   select fp.id_flujo into p_id_flujo from flujo_proyecto fp where fp.id_proyecto = p_proyecto_id order by fp.id_flujo desc limit 1;
+  --actualizar el proyecto a estado publicado jsjsjsjs skere modo diablo lol 
+  	update proyectos set publicado = true, reforma=true ,documento_preparado=false where id_proyecto =p_proyecto_id;
+  --obtener el id del area que elaboro el proyecto xdxd skere modo diablo
+  select p.id_area_responsable,p.codigo  into p_id_area,p_codigo_proyecto from proyectos p where p.id_proyecto =p_proyecto_id;
+    --ingresar los datos a la tabla jijijij ja
+    insert into publicacion_proyecto(url_doc ,id_proyecto,versionp,id_flujo,titulo_publicacion,id_area,codigo) 
+   	values (p_url_doc,p_proyecto_id,p_version_p,p_id_flujo,p_titulo_proyecto,p_id_area,p_codigo_proyecto);
+	--ingresar los datos al historial de un proyecto ssjsjsj skere modo sjere 
+   insert into historial_proyecto (detalle,boton,tipo,id_proyecto,Descripcion, titulo)
+	values (concat('El proyecto: ',p_titulo_proyecto, ' se publicó'),false,10,p_proyecto_id,'Se publica el proyecto','Publicación');
+	-------PARA PASAR EL PROYECTO AUTOMATICAMENTE A OTRO FLUJO AUTOMATICAMENTE Y HACERLE LA REFORMA
+	--	0.-Verificar si la categoria del proyecto tiene flujos y activar lo siguiente
+	select case when   COUNT(*)>0 then true else false end as TieneFlujoSIguiente into p_tiene_otro_flujo from 
+	(SELECT
+    fc.id_flujo,
+    fc.id_categoria,
+    ROW_NUMBER() OVER (PARTITION BY fc.id_categoria ORDER BY fc.fecha_creacion ASC) AS row_num
+	FROM
+    flujo_categoria fc
+	WHERE
+    fc.id_categoria = (select p.id_categoria from proyectos p where p.id_proyecto = p_proyecto_id) AND estado
+	ORDER BY
+    fc.fecha_creacion asc) as X
+	where X.row_num = (select p.numreforma +1 as SiguienteReforma  from proyectos p where p.id_proyecto=p_proyecto_id);
+
+	--SI TIENE AUTOMATIZAR EL PROCESO
+	if p_tiene_otro_flujo then 
+			--3.-Si se encuentra entonces activar la reforma de ese proyecto(la ultima area del flujo anterior es la que realiza la reforma)
+				--3.1.- En el evento reforma Actualizar el numReforma del proyecto sumarle+1 
+		call iniciar_reforma_categoria_flujo(p_proyecto_id);
+		--4.- Ahora obtener el flujo de la categoria del numReforma
+		--5.- Activar el cursor de copiar_niveles_categoria_reformas.
+			--como ya se realizo la reforma seleccion el nmreforma nuevo
+			select X.id_flujo into p_id_flujo from 
+	(SELECT
+    fc.id_flujo,
+    fc.id_categoria,
+    ROW_NUMBER() OVER (PARTITION BY fc.id_categoria ORDER BY fc.fecha_creacion ASC) AS row_num
+	FROM
+    flujo_categoria fc
+	WHERE
+    fc.id_categoria = (select p.id_categoria from proyectos p where p.id_proyecto = p_proyecto_id) AND estado
+	ORDER BY
+    fc.fecha_creacion asc) as X
+	where X.row_num = (select p.numreforma   from proyectos p where p.id_proyecto=p_proyecto_id);
+	--enviar al cursor p_id_flujo
+	--p_id_proyecto integer, p_id_categoria integer, p_id_flujo integer
+	--p_categoria
+	select p.id_categoria into p_categoria  from proyectos p where p.id_proyecto =p_proyecto_id;
+	--CURSOR PARA COPIAR LOS NIVELES
+		perform copiar_niveles_categoria_proyecto_reformas(p_proyecto_id,p_categoria,p_id_flujo);
+	
+	--ahora se necesita registrar el estado del nivel que seria el primero: elaboracion -> 'En elaboracion'
+   --para ello primero se toma el ultimo flujo creado del proyecto
+   select into p_id_nivel_flujo id_flujo  
+	from flujo_proyecto fp
+	where fp.id_proyecto =p_proyecto_id and fp.estado =true order by id_flujo desc limit 1;
+	--ahora se toma el primer nivel de ese flujo para insertarlo en el estado nivel 
+	select into p_primer_nivel id_niveles_pro  from niveles_proyecto np where np.id_flujo = p_id_nivel_flujo and estado =true order by nivel asc limit 1;
+	--y se inserta ese p_primer_nivel en los estados del nivel con la observacion -> "EN elaboracion"
+	insert into  estado_nivel (id_nivel,observacion,estado_nivel) values (p_primer_nivel, 'Se empieza la elaboracion','Sin enviar');
+	--aqui insertar el historial del proyecto cuando se crea un flujo para el proyecto xd
+
+	insert into historial_proyecto (detalle,boton,tipo,id_proyecto,Descripcion, titulo)
+	values ('Se crea un nuevo flujo para el proyecto',true,3,p_proyecto_id,'Creación de flujo para el proyecto','Nuevo Flujo');
+	--ahora obtener el id de la ultima historia proyecto para conectar ese historial con el flujo 
+	--p_ultimo_historial
+	select id_historial into  p_ultimo_historial from historial_proyecto hp where hp.id_proyecto =p_proyecto_id order by id_historial desc limit 1;
+	--ahora insertar eso en la tabla flujo_historial para empatar el flujo rechazado con el id de la historia 
+	insert into historial_flujo(id_flujo,id_historial) values (p_id_nivel_flujo,p_ultimo_historial );
+	end if;
+	EXCEPTION
+        -- Si ocurre un error en la transacción principal, revertir
+        WHEN OTHERS THEN
+            ROLLBACK;
+            RAISE EXCEPTION 'Ha ocurrido un error en la transacción principal: %', SQLERRM;	
+END;
+$procedure$
+;
+
+
+
+select * from proyectos p 
+--idCategoria = 15
+
+--1.-Obtener el numReforma siguiente del proyecto
+--55
+--57
+select p.numreforma +1 as SiguienteReforma  from proyectos p where p.id_proyecto=55 ;
+
+
+select case when   COUNT(*)>0 then true else false end as TieneFlujoSIguiente from 
+(SELECT
+    fc.id_flujo,
+    fc.id_categoria,
+    ROW_NUMBER() OVER (PARTITION BY fc.id_categoria ORDER BY fc.fecha_creacion ASC) AS row_num
+FROM
+    flujo_categoria fc
+WHERE
+    fc.id_categoria = (select p.id_categoria from proyectos p where p.id_proyecto = 57) AND estado
+ORDER BY
+    fc.fecha_creacion asc) as X
+where X.row_num = (select p.numreforma +1 as SiguienteReforma  from proyectos p where p.id_proyecto=57);
+
+select p.numreforma+1  from proyectos p where p.id_proyecto=55;
+
+--Copiar el mismo procedimiento pero sin documento 
+-- DROP PROCEDURE public.iniciar_reforma(int4, varchar, int4, varchar);
+select * from area_departamental ad where ad.id_area =74;
+--p.numreforma+1 
+
+select npc.id_departamento from
+(
+select * from 
+(select id_flujo ,
+    ROW_NUMBER() OVER (PARTITION BY fc.id_categoria ORDER BY fc.fecha_creacion ASC) AS row_num
+from flujo_categoria fc 
+where fc.id_categoria = (select p.id_categoria from proyectos p where p.id_proyecto=55)) as X
+where X.row_num =(select p.numreforma+1 from proyectos p where p.id_proyecto=55) ) as Y
+inner join niveles_proyecto_categoria npc on Y.id_flujo = npc.id_flujo order by npc.nivel asc limit 1;
+
+
+CREATE OR REPLACE PROCEDURE public.iniciar_reforma_categoria_flujo
+(IN p_id_proyecto integer)
+ LANGUAGE plpgsql
+AS $procedure$
+declare 
+	Tiene_Versiones bool;
+	Ultima_version_publicada int;
+	Prefijo_proyect varchar(50);
+	Prefijo_area varchar(50);
+	Prefijo_categoria varchar(50);
+	Version_actual varchar(50);
+	ID_Relacion  int;
+	p_nombre_area varchar(900);
+	p_titulo varchar (900);
+	p_numreform int;
+	p_url_alcance character varying;
+	p_id_area_reforma int;
+Begin
+	select case when COUNT(*)>=1 then true else false end as TieneVersiones into Tiene_Versiones from publicacion_proyecto pp where pp.id_proyecto =p_id_proyecto;
+	if (Tiene_Versiones)
+	then 
+	--aqui hacer todo el proceso porque si tiene versiones anteriores publicadas 
+	--primero se selecciona la ultima version publicada del proyecto 
+		select pp.id_publicacion into Ultima_version_publicada from publicacion_proyecto pp where pp.id_proyecto =p_id_proyecto order by id_publicacion desc limit 1;
+	
+	select dp.url_doc into p_url_alcance from documentos_proyectos dp where dp.id_proyecto =p_id_proyecto and dp.estado limit 1;
+	select p.numreforma+1  into p_numreform from proyectos p where p.id_proyecto=p_id_proyecto;
+	--HAY QUE TOMAR EL PRIMER ID DEL AREA DEL PRIMER NIVEL DEL FLUJO CATEGORIA CORRESPONDIENTE A NUMREFORM
+	select npc.id_departamento into p_id_area_reforma from
+(
+select * from 
+(select id_flujo ,
+    ROW_NUMBER() OVER (PARTITION BY fc.id_categoria ORDER BY fc.fecha_creacion ASC) AS row_num
+from flujo_categoria fc 
+where fc.id_categoria = (select p.id_categoria from proyectos p where p.id_proyecto=p_id_proyecto)) as X
+where X.row_num =p_numreform ) as Y
+inner join niveles_proyecto_categoria npc on Y.id_flujo = npc.id_flujo order by npc.nivel asc limit 1;
+	
+	--ahora si anadir todo el contenido a la tabla reforma y actualizar el proyecto
+	insert into reformas(url_alcance,id_publicacion,id_area_reforma,descripcion) values (p_url_alcance,Ultima_version_publicada,p_id_area_reforma,'Ultimo documento publicado');
+	--tomar las variables necesarias para poder actualizar la tabla proyectos 
+	--armar el codigo del proyecto 
+	--create_proyect_prefij
+	--lo que necesito para generar el nuevo codigo del proyecto con la version actual sin modificar 
+	-- concat(new.prefijo_proyecto,'-', Pref_area,'-',Pref_cat,'-',new.versionp);
+	select  p.prefijo_proyecto , cp.prefijo_categoria, p.titulo  into Prefijo_proyect,Prefijo_categoria,p_titulo
+	from proyectos p 
+	inner join categorias_proyecto cp on p.id_categoria =cp.id_categoria 
+	where p.id_proyecto =p_id_proyecto;
+	--ahora tomar el prefijo del area xdxd skere modo skere
+	select ad.prefijo_departamento into Prefijo_area from area_departamental ad where ad.id_area  = p_id_area_reforma;
+	--ahora tomar la ultima version segun el id de la ultima publicacion con dos decimales para formar el novo prefijo jsjsj skere modo skere skere sjere skere 
+	select cast(TO_CHAR(pp.versionp, 'FM999D0')as varchar(500)) into Version_actual from publicacion_proyecto pp where pp.id_publicacion =Ultima_version_publicada;
+	--ahora actualizar la tabla proyecto
+	--obtener el numreforma actual y sumarle 1 y guardarlo en p_numreform
+	--actualizar el codigo del area, el id_area , publicado = false 
+	update proyectos set codigo=concat(Prefijo_proyect,'-', Prefijo_area,'-',Prefijo_categoria,'-',Version_actual),
+						id_area_responsable = p_id_area_reforma, publicado=false,reforma=true, numreforma=p_numreform  where id_proyecto =p_id_proyecto;
+	--actualizar el resto de tablas que tengan que ver con el proyecto, como el historial, participantes, flujo, documentos extras, documentos proyecto -5
+	update historial_proyecto set estado = false where id_proyecto = p_id_proyecto;
+	update participantes set estado = false where id_proyecto = p_id_proyecto;
+	update flujo_proyecto set estado = false where id_proyecto =p_id_proyecto;
+	update documentos_extras set estado = false where id_proyecto =p_id_proyecto;
+	update documentos_proyectos set estado = false where id_proyecto =p_id_proyecto;
+	--agregar como participante del proyecto con el rol de admin al administrador de la nueva area encargada del proyecto
+	--obtener el id de la realcion 
+	select ua.id_relacion into ID_Relacion from usuarios_areas ua where ua.id_area =p_id_area_reforma and rol_area and estado ;
+	--insertar los datos en participantes 
+	insert into participantes(id_rol,id_relacion_usu_ar,id_proyecto) values(1,ID_Relacion,p_id_proyecto);
+	--y agregar al historial del proyecto el mensaje sobre que se esta iniciando una reforma xdxd skere modo skere
+	--obtener el nombre del area 
+	select ad.nombre_area into p_nombre_area from area_departamental ad where ad.id_area  = p_id_area_reforma;
+	insert into historial_proyecto (detalle,boton,tipo,id_proyecto,Descripcion, titulo)
+	values (concat('El area: ',p_nombre_area, ' inició la reforma del proyecto : ',p_titulo),false,11,p_id_proyecto,'Se reforma un proyecto','Nueva reforma');
+	end if;
+	EXCEPTION
+        -- Si ocurre un error en la transacción principal, revertir
+        WHEN OTHERS THEN
+            ROLLBACK;
+            RAISE EXCEPTION 'Ha ocurrido un error en la transacción principal: %', SQLERRM;
+END;
+$procedure$
+;
+
+select * from flujo_proyecto fp
+inner join niveles_proyecto np ON fp.id_flujo =np.id_flujo 
+inner join niveles n on np.id_nivel = n.id_nivel 
+where fp.id_proyecto =59;
+
+
+
+select * from proyectos fp where fp.id_proyecto =59;
+
+select * from flujo_categoria fc where fc.id_categoria =14;
+
+
+select * from niveles_estado_proyecto(60);
+select * from niveles_estado_proyecto(61);
+
+select * from flujo_proyecto fp
+inner join niveles_proyecto np on fp.id_flujo =np.id_flujo 
+inner join estado_nivel en on np.id_nivel =en.id_nivel 
+where fp.id_proyecto = 60;
+
+-- DROP FUNCTION public.niveles_estado_proyecto(int4);
+
+CREATE OR REPLACE FUNCTION public.niveles_estado_proyecto(p_id_proyecto integer)
+ RETURNS TABLE(r_id_estado integer, r_estado boolean, r_fecha_estado character varying, r_observacion character varying, r_id_nivel integer, r_estado_nivel character varying, r_id_area integer, r_nombre_area character varying, r_nivel integer, click boolean, r_tipo_nivel character varying)
+ LANGUAGE plpgsql
+AS $function$
+declare
+	T_niveles bool;
+begin
+	select  into T_niveles
+	case when count(*)>=1 then true else false end 
+	from proyectos p 
+	inner join flujo_proyecto fp on p.id_proyecto =fp.id_proyecto 
+	inner join niveles_proyecto np on fp.id_flujo =np.id_flujo 
+	--inner join estado_nivel en on np.id_niveles_pro =en.id_nivel 
+	where p.id_proyecto =p_id_proyecto and fp.estado;	
+	
+	
+
+	--Si es true es porque tiene niveles entonces hay que retornar la data con todo en true 
+	if(T_niveles) then
+	return query
+	select * from
+			((	select 
+	en.id_estado ,en.estado ,cast(TO_CHAR(en.fecha, 'DD-MON-YYYY') as varchar(500)),en.observacion ,en.id_nivel ,en.estado_nivel,ad.id_area ,ad.nombre_area ,np.nivel, cast(true as bool) ,  n.titulo 
+	from proyectos p 
+	inner join flujo_proyecto fp on p.id_proyecto =fp.id_proyecto 
+	inner join niveles_proyecto np on fp.id_flujo =np.id_flujo 
+	inner join estado_nivel en on np.id_niveles_pro =en.id_nivel 
+	inner join area_departamental ad on np.id_departamento =ad.id_area 
+	inner join niveles n on np.id_nivel =n.id_nivel 
+	where p.id_proyecto =60 and fp.estado = true order by np.nivel asc )
+			union all
+			(select 
+	0, false, 'Sin fecha', 'Sin enviar',0, 'Sin enviar', ad.id_area ,ad.nombre_area ,np.nivel, cast(true as bool) ,  n.titulo 
+	--en.id_estado ,en.estado ,cast(TO_CHAR(en.fecha, 'DD-MON-YYYY') as varchar(500)),en.observacion ,
+	--en.id_nivel ,en.estado_nivel,ad.id_area ,ad.nombre_area ,np.nivel, cast(true as bool) ,  n.titulo 
+	from proyectos p 
+	inner join flujo_proyecto fp on p.id_proyecto =fp.id_proyecto 
+	inner join niveles_proyecto np on fp.id_flujo =np.id_flujo 
+LEFT JOIN estado_nivel en ON np.id_niveles_pro = en.id_nivel -- Cambiado a LEFT JOIN
+	inner join area_departamental ad on np.id_departamento =ad.id_area 
+	inner join niveles n on np.id_nivel =n.id_nivel 
+	where p.id_proyecto =p_id_proyecto  and en.id_nivel IS NULL and fp.estado  order by np.nivel asc ))as x;
+
+	--sino es xq aun esta en elaboracion, entonces retornar data solo con dicho estado
+	else 
+	return query
+			select 
+	 cast(0 as int),cast(false as bool),cast(TO_CHAR(p.fecha_creacion, 'DD-MON-YYYY') as varchar(500)),cast('En elaboracion' as varchar(100)),
+	 cast(0 as int),cast('No enviado' as varchar(100)),ad.id_area ,ad.nombre_area ,np.nivel , cast(false as bool), n.titulo 
+		from proyectos p 
+		inner join flujo_proyecto fp ON p.id_proyecto =fp.id_proyecto 
+		inner join niveles_proyecto np on fp.id_flujo =np.id_flujo 
+		inner join area_departamental ad ON np.id_departamento =ad.id_area 
+		inner join niveles n on np.id_nivel =n.id_nivel 
+		where p.id_proyecto =p_id_proyecto and fp.estado = true and np.nivel =0 order by np.nivel asc ;	
+	end if;
+end;
+$function$
+;
+
+--Arreglar esta funcion porque no esta colocando como en elaboracion el primer nivel xd skere modo Maholy
+CREATE OR REPLACE FUNCTION public.categoria_proyecto_flujo()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+---Declarar variables
+declare
+	Padre_Arbol int;
+	is_reforma bool;
+	Tiene_flujo bool;
+	p_id_flujo int;
+	p_p_data JSON;
+	ID_F int =0;
+	p_id_departamtento int;
+	p_id_nivel int;
+	p_nivel int;
+	p_id_nivel_flujo int;
+	p_primer_nivel int;
+	p_ultimo_historial int;
+	es_reforma bool;
+	peso DECIMAL(5, 1);
+	Prefijo_proyect varchar(50);
+	Prefijo_area varchar(50);
+	Prefijo_categoria varchar(50);
+begin 
+	
+	--obtener si el proyecto es reforma
+	select p.reforma into is_reforma from proyectos p where p.id_proyecto = new.id_proyecto;
+	--id = 14
+	--en el trigger omitir ese paso porque el id = new.id_categoria
+	--obtener si la categoria tiene por lo menos tiene un flujo
+	select case when COUNT(*)>=1 then true else false end into Tiene_flujo from flujo_categoria fc where fc.id_categoria =new.id_categoria;
+	--si es true entonces copiar el flujo de la categoria
+	--con la misma logica que el de rechazar documento en un nivel hacer esto 
+	if Tiene_flujo and not is_reforma then
+		--p_id_flujo --> primer flujo de la categoria 
+		select fc.id_flujo into p_id_flujo from flujo_categoria fc where fc.id_categoria = new.id_categoria and estado order by fc.fecha_creacion asc limit 1;
+	
+		--select np.id_niveles_pro  from niveles_proyecto_categoria np  where np.id_flujo =13 and np.estado;
+		--13
+		--select np.id_niveles_pro  from niveles_proyecto_categoria np  where np.id_flujo =13 and np.estado;
+		--Llamar al cursor 
+ 			PERFORM copiar_niveles_categoria_proyecto(new.id_area_responsable, new.id_proyecto , new.id_categoria ,p_id_flujo);
+	end if;
+	
+   --ahora se necesita registrar el estado del nivel que seria el primero: elaboracion -> 'En elaboracion'
+   --para ello primero se toma el ultimo flujo creado del proyecto
+   select into p_id_nivel_flujo id_flujo  
+	from flujo_proyecto fp
+	where fp.id_proyecto =new.id_proyecto and fp.estado =true order by id_flujo asc limit 1;
+	--ahora se toma el primer nivel de ese flujo para insertarlo en el estado nivel 
+	select into p_primer_nivel id_niveles_pro  from niveles_proyecto np where np.id_flujo = p_id_nivel_flujo and estado =true order by nivel asc limit 1;
+	--y se inserta ese p_primer_nivel en los estados del nivel con la observacion -> "EN elaboracion"
+	insert into  estado_nivel (id_nivel,observacion,estado_nivel) values (p_primer_nivel, 'Se empieza la elaboracion','Sin enviar');
+	--aqui insertar el historial del proyecto cuando se crea un flujo para el proyecto xd
+
+	insert into historial_proyecto (detalle,boton,tipo,id_proyecto,Descripcion, titulo)
+	values ('Se crea un nuevo flujo para el proyecto',true,3,new.id_proyecto,'Creación de flujo para el proyecto','Nuevo Flujo');
+	--ahora obtener el id de la ultima historia proyecto para conectar ese historial con el flujo 
+	--p_ultimo_historial
+	select id_historial into  p_ultimo_historial from historial_proyecto hp where hp.id_proyecto =new.id_proyecto order by id_historial desc limit 1;
+	--ahora insertar eso en la tabla flujo_historial para empatar el flujo rechazado con el id de la historia 
+	insert into historial_flujo(id_flujo,id_historial) values (p_id_nivel_flujo,p_ultimo_historial );
+		
+return new;
+end
+$function$
+;
+
+
+select * from guias_proyectos gp ;
+
+--agregar una columa nueva a documentos proyectos para saber la extension del archivo que se subio
+select * from documentos_proyectos dp ;
+
+alter table documentos_proyectos 
+add column extension_archivo varchar(100) default '.pdf' not null;
+
+-- DROP FUNCTION public.ver_borradores_proyecto(int4);
+
+CREATE OR REPLACE FUNCTION public.ver_borradores_proyecto(p_id_proyecto integer)
+ RETURNS TABLE(d_url character varying, d_fecha character varying, d_id integer, d_descripcion character varying, d_extension_archivo character varying)
+ LANGUAGE plpgsql
+AS $function$
+begin
+	return query
+	select dp.url_doc , cast(TO_CHAR(dp.fecha_creacion, 'DD-MON-YYYY') as varchar(500)),dp.id_documento ,dp.descripcion,dp.extension_archivo from documentos_proyectos dp 
+	where id_proyecto = p_id_proyecto and dp.estado =false order by dp.id_documento  asc;	
+
+end;
+$function$
+;
 

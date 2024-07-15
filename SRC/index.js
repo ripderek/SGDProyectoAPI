@@ -1,31 +1,31 @@
-const express = require('express');
-const cors = require('cors');
-const dotenv = require('dotenv');
-const cookieParser = require('cookie-parser');
-const http = require('http');
-const { Server } = require('socket.io');
+const express = require("express");
+const cors = require("cors");
+const dotenv = require("dotenv");
+const cookieParser = require("cookie-parser");
+const http = require("http");
+const { Server } = require("socket.io");
 
-
-const Connection = require('./db_m.js');
-const { saveDocument, getDocumentContent } = require("./controllers/Document/document-controller.js");
-const Delta = require('quill-delta');
-
+const Connection = require("./db_m.js");
+const {
+  saveDocument,
+  getDocumentContent,
+} = require("./controllers/Document/document-controller.js");
+const Delta = require("quill-delta");
 
 //Este middleware se ejecuta antes de entrar a una ruta protegida, es decir, se necesita un token valido para acceder
-const { authenticateToken } = require('./middleware/authorization.js');
-
+const { authenticateToken } = require("./middleware/authorization.js");
 
 //variable donde se importa las rutas
-const authRoutes = require('./routes/auth-routes.js');
-const userRoutes = require('./routes/users-routes.js');
-const areaRoutes = require('./routes/area-routes.js');
-const proyectsRoutes = require('./routes/proyects-routes.js');
-const empresaRoutes = require('./routes/empresa-routes.js');
-const publicRoutes = require('./routes/public-routes.js');
+const authRoutes = require("./routes/auth-routes.js");
+const userRoutes = require("./routes/users-routes.js");
+const areaRoutes = require("./routes/area-routes.js");
+const proyectsRoutes = require("./routes/proyects-routes.js");
+const empresaRoutes = require("./routes/empresa-routes.js");
+const publicRoutes = require("./routes/public-routes.js");
 const googleRoutes = require("./routes/google-routes.js");
-const flujoRoutes = require('./routes/flujo-routes.js');
-const firmaRoutes = require('./routes/firmas-routes.js');
-const { Socket } = require('dgram');
+const flujoRoutes = require("./routes/flujo-routes.js");
+const firmaRoutes = require("./routes/firmas-routes.js");
+const { Socket } = require("dgram");
 
 //config entorno
 dotenv.config();
@@ -38,35 +38,38 @@ const PORT = 4000;
 //const corsOptions = { credentials: true, origin: "http://localhost:3000" };
 //https://z8zbh18v-3000.use2.devtunnels.ms/
 //const corsOptions = { credentials: true, origin: "https://z8zbh18v-3000.use2.devtunnels.ms" };
-const corsOptions = { credentials: true, origin: "http://localhost:3000" };
-
-
+//const corsOptions = { credentials: true, origin: "http://localhost:3000" };
+const corsOptions = {
+  origin: (origin, callback) => {
+    callback(null, true);
+  },
+  credentials: true, // Permitir credenciales
+};
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(cookieParser());
 
-//Las rutas estan separadas por archivos 
+//Las rutas estan separadas por archivos
 //esta ruta no estara protegida por un middleware ya que serivira para verificar el
 //inicio de sesion
-app.use('/api/auth', authRoutes);
-//acceso publico 
-app.use('/api/public', publicRoutes);
+app.use("/api/auth", authRoutes);
+//acceso publico
+app.use("/api/public", publicRoutes);
 //inicio con google
-app.use('/api/authgoogle', googleRoutes);
+app.use("/api/authgoogle", googleRoutes);
 
 //Prueba con las firmas
-app.use('/api/firma', firmaRoutes);
+app.use("/api/firma", firmaRoutes);
 
 //rutas protegidas con middleare, es decir, se necesita un token valido para acceder
-app.use('/api/user', authenticateToken, userRoutes);
-app.use('/api/area', authenticateToken, areaRoutes);
-app.use('/api/proyects', authenticateToken, proyectsRoutes);
-app.use('/api/empresa', authenticateToken, empresaRoutes);
-app.use('/api/flujo', authenticateToken, flujoRoutes);
+app.use("/api/user", authenticateToken, userRoutes);
+app.use("/api/area", authenticateToken, areaRoutes);
+app.use("/api/proyects", authenticateToken, proyectsRoutes);
+app.use("/api/empresa", authenticateToken, empresaRoutes);
+app.use("/api/flujo", authenticateToken, flujoRoutes);
 
 //Iniciar la API
-app.listen(PORT, () => console.log('SERVER ON PORT' + PORT));
-
+app.listen(PORT, () => console.log("SERVER ON PORT" + PORT));
 
 //Api editor
 const PORT2 = 9000;
@@ -122,7 +125,10 @@ io.on("connection", (socket) => {
       const index = connectedUsers[id_proyecto].indexOf(socket.id);
       if (index !== -1) {
         connectedUsers[id_proyecto].splice(index, 1);
-        io.to(id_proyecto).emit("user-count", connectedUsers[id_proyecto].length);
+        io.to(id_proyecto).emit(
+          "user-count",
+          connectedUsers[id_proyecto].length
+        );
       }
     }
   });
