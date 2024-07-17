@@ -68,6 +68,10 @@ const {
   ver_flujo_categoria,
   flujos_categorias,
   ver_word,
+  download_doc_proyecto,
+  listar_recursos_compartidos,
+  crear_recurso_compartido,
+  eliminar_recurso_compartido,
 } = require("../controllers/Proyects/proyects-controller");
 
 const { upload } = require("../middleware/multer_pdf");
@@ -89,6 +93,9 @@ router.get("/categorias_proyecto", all_categorias);
 router.post("/roles_proyecto", roles_proyecto);
 router.get("/list_categorias", list_categorias);
 router.get("/list_sub_categorias", list_sub_categorias);
+router.get("/recursos/:id", listar_recursos_compartidos);
+router.post("/agregar_recurso/", crear_recurso_compartido);
+router.post("/eliminar_recurso/", eliminar_recurso_compartido);
 
 router.post("/subir_pdf", upload.single("file"), subir_pdf);
 router.get("/documentos_proyectos/:id", documentos_proyectos);
@@ -97,6 +104,7 @@ router.get("/word/:id", ver_word);
 router.get("/guias/:id", guias_proyectos);
 router.post("/upload_guia", upload_guia.single("file"), subir_guia);
 router.post("/ver_guia", download_guia);
+router.post("/descargardoc", download_doc_proyecto);
 router.get("/ver_flujo_proyecto/:id", ver_flujo_proyecto);
 router.get("/borradores/:id", borradores_proyecto);
 router.get("/data_pro/:id", proyect_data);

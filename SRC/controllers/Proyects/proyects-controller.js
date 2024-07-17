@@ -84,7 +84,12 @@ const subir_pdf = async (req, res, next) => {
     console.log("Ruta del archivo: " + `${documento}`);
     //con esa variable ya detecto el tipo de archivo ya que si es PDF se le puede agregar el encabezado
     //si es un word simplemente se lo guarda
-    if (extesion !== ".pdf") {
+    //consulta para saber si tiene habilitado el generar encabezados automatizados en caso de ser pdf
+    const Encabezado = await pool.query(
+      `select requiere_encabezado  from proyectos p  where p.id_proyecto =${id} `
+    );
+    console.log(Encabezado);
+    if (extesion !== ".pdf" || !Encabezado.rows[0].requiere_encabezado) {
       const users = await pool.query("call documento_proyecto($1,$2,$3,$4)", [
         documento,
         id,
@@ -94,6 +99,23 @@ const subir_pdf = async (req, res, next) => {
       console.log(users);
       return res.status(200).json({ message: "se subio el archivo" });
     }
+    /*
+    else 
+    {
+      if (!Encabezado.rows[0].requiere_encabezado)
+      {
+        const users = await pool.query("call documento_proyecto($1,$2,$3,$4)", [
+          documento,
+          id,
+          descripcion,
+          extesion,
+        ]);
+        console.log(users);
+        return res.status(200).json({ message: "se subio el archivo" });
+      }
+    }*/
+
+    console.log(dataProyect.rows[0].r_titulo);
 
     //recolectar la informacion de ese proyecto para ponerlo como encabezado
     const dataProyect = await pool.query("select * from pro_encabezado($1)", [
@@ -463,9 +485,7 @@ const ver_word = async (req, res) => {
     res.contentType(
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     );
-
     res.send(data);
-
     //console.log(urlArchivos);
     // return res.download(urlArchivos);
   } catch (error) {
@@ -564,6 +584,20 @@ const download_guia = async (req, res) => {
     return res.status(404).json({ message: error.message });
   }
 };
+
+const download_doc_proyecto = async (req, res) => {
+  try {
+    const { id } = req.body;
+    const users = await pool.query("select * from ver_docs_x_id($1)", [id]);
+    const urlArchivos = path.join(__dirname, "../" + users.rows[0].d_url);
+
+    console.log(urlArchivos);
+    return res.download(urlArchivos);
+  } catch (error) {
+    return res.status(404).json({ message: error.message });
+  }
+};
+
 const ver_flujo_proyecto = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -2108,6 +2142,55 @@ const subir_documento_firmado = async (req, res, next) => {
     return res.status(404).json({ message: error.message });
   }
 };
+/* crear dos funciones, una para insertar recursos compartidos y otra para listar los recursos compartidos*/
+//fucnion para listar los recursos compartidos de un proyecto
+const listar_recursos_compartidos = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const users = await pool.query(
+      "select * from lis_recursos_compartidos($1)",
+      [id]
+    );
+    console.log(users);
+    return res.status(200).json(users.rows);
+  } catch (error) {
+    return res.status(404).json({ message: error.message });
+  }
+};
+//funcion para insertar un recurso compartido
+const crear_recurso_compartido = async (req, res, next) => {
+  try {
+    const { p_id_proyecto, p_tipo_recurso, p_enlace, p_nombre_recurso } =
+      req.body;
+    const users = await pool.query(
+      "call insertar_recurso_compartido($1,$2,$3,$4)",
+      [p_id_proyecto, p_tipo_recurso, p_enlace, p_nombre_recurso]
+    );
+    console.log(users);
+    return res.status(200).json({ message: "Se creo el recurso compartido" });
+  } catch (error) {
+    console.log(error);
+    return res.status(404).json({ message: error.message });
+  }
+};
+//funcion para eliminar un recurso skere modo diablo
+const eliminar_recurso_compartido = async (req, res, next) => {
+  try {
+    const { p_id_proyecto, p_enlace } = req.body;
+    const users = await pool.query("call eliminar_recurso_compartido($1,$2)", [
+      p_id_proyecto,
+      p_enlace,
+    ]);
+    console.log(users);
+    return res
+      .status(200)
+      .json({ message: "Se elimino el recurso compartido" });
+  } catch (error) {
+    console.log(error);
+    return res.status(404).json({ message: error.message });
+  }
+};
+
 module.exports = {
   crear_proyecto,
   crear_categoria,
@@ -2177,4 +2260,8 @@ module.exports = {
   ver_flujo_categoria,
   flujos_categorias,
   ver_word,
+  download_doc_proyecto,
+  listar_recursos_compartidos,
+  crear_recurso_compartido,
+  eliminar_recurso_compartido,
 };
