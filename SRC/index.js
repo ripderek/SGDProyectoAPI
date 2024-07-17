@@ -25,6 +25,7 @@ const publicRoutes = require("./routes/public-routes.js");
 const googleRoutes = require("./routes/google-routes.js");
 const flujoRoutes = require("./routes/flujo-routes.js");
 const firmaRoutes = require("./routes/firmas-routes.js");
+const chats = require("./routes/chats-routes.js")
 const { Socket } = require("dgram");
 
 //config entorno
@@ -67,6 +68,7 @@ app.use("/api/area", authenticateToken, areaRoutes);
 app.use("/api/proyects", authenticateToken, proyectsRoutes);
 app.use("/api/empresa", authenticateToken, empresaRoutes);
 app.use("/api/flujo", authenticateToken, flujoRoutes);
+app.use("/api/chats",authenticateToken,chats);
 
 //Iniciar la API
 app.listen(PORT, () => console.log("SERVER ON PORT" + PORT));
